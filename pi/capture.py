@@ -25,7 +25,7 @@ while True:
   image_metadata = picam2.capture_file(image_data, format="jpeg")
   current_timestamp = int(time.time())
 
-  # TODO move this to a hash with metadata fields, and use the timestamp in the key name...
+  # Prepare data to save in Redis...
   redis_key = f"image:{current_timestamp}"
   data_to_save = dict()
   data_to_save["image_data"] = image_data.getvalue()
