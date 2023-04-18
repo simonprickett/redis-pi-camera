@@ -14,6 +14,8 @@ IMAGE_META_DATA_FIELDS = [
     # Anything else that is captured on the Pi can go here.
 ]
 
+STRING_ENCODING = "utf-8"
+
 # Initialise Flask
 app = Flask(__name__)
 
@@ -27,7 +29,7 @@ def get_all_images():
     # Scan the Redis keyspace for all keys whose name begins with IMAGE_KEY_PREFIX.
     for img in redis_client.scan_iter(match=f"{IMAGE_KEY_PREFIX}:*", _type="HASH"):
         # Return only the timestamp part of the Redis key.
-        all_images.append(img.decode('utf-8').removeprefix(f"{IMAGE_KEY_PREFIX}:"))
+        all_images.append(img.decode(STRING_ENCODING).removeprefix(f"{IMAGE_KEY_PREFIX}:"))
 
     # Most recent timestamp first...
     all_images.sort(reverse=True)
@@ -49,7 +51,7 @@ def get_image(image_id):
     image_file.seek(0)
 
     # Get the MIME type from the Redis response, and decode it from binary.
-    return send_file(image_file, mimetype=image_data[1].decode("utf-8"))
+    return send_file(image_file, mimetype=image_data[1].decode(STRING_ENCODING))
 
 # Retrieve image meta data from Redis.
 @app.route(f"/{API_ROUTE_PREFIX}/data/<image_id>")
@@ -61,8 +63,8 @@ def get_image_data(image_id):
       return f"Image {image_id} not found.", 404
     
     data_dict = dict()
-    data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode("utf-8")
-    data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode("utf-8")
+    data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode(STRING_ENCODING)
+    data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode(STRING_ENCODING)
     return data_dict
 
 @app.route("/")
