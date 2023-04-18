@@ -1,4 +1,4 @@
-from flask import Flask, send_file
+from flask import Flask, render_template, send_file
 import io
 import os
 import redis
@@ -69,4 +69,4 @@ def get_image_data(image_id):
 
 @app.route("/")
 def home():
-    return "TODO list all the images with links to their pages?"
+    return render_template("index.html")
