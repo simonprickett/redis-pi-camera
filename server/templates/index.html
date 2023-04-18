@@ -20,21 +20,14 @@
       </div>
     </section>
     <div class="box">
-      <section class="section">
-        <div class="card">
-          <div class="card-content">
-            <p id="counterValue" class="title has-text-centered">{{count}}</p>
-          </div>
-          <footer class="card-footer">
-            <p class="card-footer-item">
-              <button id="incrBtn" class="button is-large is-success">Increment</button>
-            </p>
-            <p class="card-footer-item">
-              <button id="resetBtn" class="button is-large is-danger">Reset</button>
-            </p>
-          </footer>
+      <div class="notification is-info is-light is-hidden has-text-centered" id="noImagesNotification">
+        There are no images to show right now.  Refresh the page periodically to check for new images!
+      </div>
+      <div class="container">
+        <!-- This is where the images will get rendered into... -->
+        <div class="columns is-flex-wrap-wrap" id="imageArea">
         </div>
-      </section>
+      </div>
     </div>
     <footer class="footer">
       <div class="content has-text-centered">
