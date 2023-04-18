@@ -4,7 +4,11 @@ import os
 import redis
 
 IMAGE_KEY_PREFIX = "image"
+IMAGE_DATA_FIELD_NAME = "image_data"
+IMAGE_TYPE_FIELD_NAME = "TODO"
+# TODO might need other things, timestamp?
 
+# Initialise Flask
 app = Flask(__name__)
 
 # Connect to Redis using URL for environment.
