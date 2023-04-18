@@ -18,7 +18,7 @@ redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 @app.route("/image/<image_id>")
 def get_image(image_id):
     # Look for the image data in Redis.
-    image_data = redis_client.get(f"{IMAGE_KEY_PREFIX}:{image_id}")
+    image_data = redis_client.hget(f"{IMAGE_KEY_PREFIX}:{image_id}", IMAGE_DATA_FIELD_NAME)
 
     if image_data is None:
         return f"Image {image_id} not found.", 404
