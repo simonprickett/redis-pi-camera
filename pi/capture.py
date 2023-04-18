@@ -33,6 +33,7 @@ while True:
   data_to_save = dict()
   data_to_save["image_data"] = image_data.getvalue()
   data_to_save["timestamp"] = current_timestamp
+  data_to_save["mime_type"] = "image/jpeg"
   # Add any other flat name/value pairs you want to save into this dict 
   # e.g. light meter value, noise values, whatever really...
 
