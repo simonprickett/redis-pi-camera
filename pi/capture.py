@@ -2,17 +2,20 @@ import io
 import os
 import redis
 import time
-from picamera2 import Picamera2
+from picamera2 import Picamera2, Preview
+from libcamera import controls
 
 # Picamera2 docs https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 picam2 = Picamera2()
-camera_config = picam2.create_preview_configuration()
+picam2.start_preview(Preview.NULL)
+camera_config = picam2.still_configuration
 # Tweak camera_config as needed before calling configure.
 picam2.configure(camera_config)
 
-# Connect to Redis
+# Connect to Redis.
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
+# Start the camera.
 picam2.start()
 
 # Put this in a loop or whatever you want to do with capturing images. Let's take
