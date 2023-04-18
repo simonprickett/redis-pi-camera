@@ -2,8 +2,6 @@ import io
 import os
 import redis
 import time
-# Picamera2 isn't in requirements.txt as it is pre-installed on Raspberry Pi OS
-# Bullseye or later.  
 from picamera2 import Picamera2
 
 # Picamera2 docs https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
@@ -22,7 +20,9 @@ picam2.start()
 
 while True:
   image_data = io.BytesIO()
-  picam2.capture_file(image_data, format="jpeg")
+
+  # Take a picture and grab the metadata at the same time.
+  image_metadata = picam2.capture_file(image_data, format="jpeg")
   current_timestamp = int(time.time())
 
   # TODO move this to a hash with metadata fields, and use the timestamp in the key name...
@@ -30,6 +30,10 @@ while True:
   redis_client.set(redis_key, image_data.getvalue())
 
   print(f"Stored new image at {redis_key}")
+
+  # Optional - do something with the metadata if you want to.
+  print(image_metadata)
+
   time.sleep(10)
 
 # This code is unreachable but shows how to release the Redis client
