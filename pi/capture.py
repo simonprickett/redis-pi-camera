@@ -27,7 +27,15 @@ while True:
 
   # TODO move this to a hash with metadata fields, and use the timestamp in the key name...
   redis_key = f"image:{current_timestamp}"
-  redis_client.set(redis_key, image_data.getvalue())
+  data_to_save = dict()
+  data_to_save["image_data"] = image_data.getvalue()
+  data_to_save["timestamp"] = current_timestamp
+  # Add any other flat name/value pairs you want to save into this dict 
+  # e.g. light meter value, noise values, whatever really...
+
+  # Store data in a Redis Hash (flat map of name/value pairs at a single
+  # Redis key)
+  redis_client.hset(redis_key, mapping = data_to_save)
 
   print(f"Stored new image at {redis_key}")
 
