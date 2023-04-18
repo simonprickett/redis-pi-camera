@@ -7,7 +7,12 @@ API_ROUTE_PREFIX = "api"
 IMAGE_KEY_PREFIX = "image"
 IMAGE_DATA_FIELD_NAME = "image_data"
 IMAGE_MIME_TYPE_FIELD_NAME = "mime_type"
-# TODO might need other things, timestamp?
+IMAGE_TIMESTAMP_FIELD_NAME = "timestamp"
+IMAGE_META_DATA_FIELDS = [
+    IMAGE_TIMESTAMP_FIELD_NAME,
+    IMAGE_MIME_TYPE_FIELD_NAME
+    # Anything else that is captured on the Pi can go here.
+]
 
 # Initialise Flask
 app = Flask(__name__)
@@ -45,6 +50,20 @@ def get_image(image_id):
 
     # Get the MIME type from the Redis response, and decode it from binary.
     return send_file(image_file, mimetype=image_data[1].decode("utf-8"))
+
+# Retrieve image meta data from Redis.
+@app.route(f"/{API_ROUTE_PREFIX}/data/<image_id>")
+def get_image_data(image_id):
+    # Look for the image meta data in Redis.
+    image_meta_data = redis_client.hmget(f"{IMAGE_KEY_PREFIX}:{image_id}", IMAGE_META_DATA_FIELDS)
+
+    if image_meta_data[0] is None:
+      return f"Image {image_id} not found.", 404
+    
+    data_dict = dict()
+    data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode("utf-8")
+    data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode("utf-8")
+    return data_dict
 
 @app.route("/")
 def home():
