@@ -3,6 +3,7 @@ import io
 import os
 import redis
 
+API_ROUTE_PREFIX = "api"
 IMAGE_KEY_PREFIX = "image"
 IMAGE_DATA_FIELD_NAME = "image_data"
 IMAGE_MIME_TYPE_FIELD_NAME = "mime_type"
@@ -14,8 +15,21 @@ app = Flask(__name__)
 # Connect to Redis using URL for environment.
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
+# Retrieve a list of all images in Redis.
+@app.route(f"/{API_ROUTE_PREFIX}/images")
+def get_all_images():
+    all_images = []
+    # Scan the Redis keyspace for all keys whose name begins with IMAGE_KEY_PREFIX.
+    for img in redis_client.scan_iter(match=f"{IMAGE_KEY_PREFIX}:*", _type="HASH"):
+        # Return only the timestamp part of the Redis key.
+        all_images.append(img.decode('utf-8').removeprefix(f"{IMAGE_KEY_PREFIX}:"))
+
+    # Most recent timestamp first...
+    all_images.sort(reverse=True)
+    return all_images
+
 # Retrieve an image from Redis.
-@app.route("/image/<image_id>")
+@app.route(f"/{API_ROUTE_PREFIX}/image/<image_id>")
 def get_image(image_id):
     # Look for the image data in Redis.
     image_data = redis_client.hmget(f"{IMAGE_KEY_PREFIX}:{image_id}", [ IMAGE_DATA_FIELD_NAME, IMAGE_MIME_TYPE_FIELD_NAME ])
