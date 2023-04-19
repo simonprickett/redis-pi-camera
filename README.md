@@ -2,7 +2,7 @@
 
 ## Overview 
 
-This repository contains an example application that demonstrates how to capture images from a Raspberry Pi using the camera module, store them in Redis Hashes and render them in a web application.
+This repository contains an example application that demonstrates how to capture images from a Raspberry Pi using the camera module, store them in [Redis Hashes](https://redis.io/docs/data-types/hashes/) and render them in a web application.
 
 Here's what the front end looks like when a few images have been captured by the Raspberry Pi...
 
@@ -10,7 +10,7 @@ TODO IMAGE
 
 And here's a Raspberry Pi with a camera attached:
 
-TODO IMAGE
+![Raspberry Pi 3 with Camera Module attached](raspberry_pi_3_with_camera_module.jpg)
 
 ## Components of the Demo
 
@@ -48,6 +48,10 @@ See the RedisInsight section of this document if you're interested in a graphica
 You'll need to make sure that both components of the application can connect to your Redis instance.  See details in each component's README.
 
 This project will also work with a free Redis Stack cloud instance from Redis (the company).  To use this, [sign up here](https://redis.com/try-free/) and make a note of your Redis host, port and password.  You'll need those to configure each component.
+
+## The Redis Data Model
+
+TODO
 
 ## (Optional, but Recommended): RedisInsight
 
