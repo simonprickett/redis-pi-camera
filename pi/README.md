@@ -33,7 +33,27 @@ The `imx219` value may differ for your camera.  I was using the Raspberry Pi Cam
 
 ### Environment Variables
 
-TODO
+The code assumes by default that your Redis server is running on `localhost` port `6379`.  If this is not the case, you'll need to set the `REDIS_URL` environment variable to a valid Redis URL describing where and how to connect to your Redis server.
+
+For example, here's how to connect to a server on `myhost` at port `9999` with password `secret123`:
+
+```
+export REDIS_URL=redis://default:secret123@myhost:9999/
+```
+
+If you have a username and a password for your Redis server, use something like this:
+
+```
+export REDIS_URL=redis://myusername:secret123@myhost:9999/
+```
+
+If you don't need a username or a password:
+
+```
+export REDIS_URL=redis://myhost:9999/
+```
+
+Be sure to configure both the capture script and the separate server component to talk to the same Redis instance!
 
 ### Running the Capture Script
 
