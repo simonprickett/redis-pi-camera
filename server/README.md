@@ -30,7 +30,13 @@ If you need to upgrade your Python version, use your operating system's package 
 
 ### Create Virtual Environment & Install Dependencies
 
-TODO
+Next, create and activate a Python virtual environment, then install the dependencies. These are the [Flask framework](https://flask.palletsprojects.com/) and [redis-py Redis client](https://github.com/redis/redis-py):
+
+```
+python3 -m venv venv
+. ./venv/bin/activate
+pip install -r requirements.txt
+```
 
 ### Environment Variables
 
@@ -64,5 +70,15 @@ Having got everything set up, start the server like so:
 flask run
 ```
 
-It should connect to port 5000, and when you point your browser at `http://localhost:5000/` you'll see the front end showing any images that have been stored in Redis.
+You'll see output similar to the following:
 
+```
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+```
+
+The server should have connected to port 5000. When you point your browser at `http://localhost:5000/` you'll see the front end showing any images that have been stored in Redis.
+
+Whenever you are done using the server, press Ctrl-C to terminate it.
