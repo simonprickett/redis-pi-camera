@@ -7,8 +7,12 @@ from libcamera import controls
 
 # Picamera2 docs https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 picam2 = Picamera2()
+# Headless so we don't want a preview window.
 picam2.start_preview(Preview.NULL)
+
+# This will use max resolution, adjust if you want less (see above PDF).
 camera_config = picam2.still_configuration
+
 # Tweak camera_config as needed before calling configure.
 picam2.configure(camera_config)
 
