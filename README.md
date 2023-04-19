@@ -49,9 +49,32 @@ You'll need to make sure that both components of the application can connect to 
 
 This project will also work with a free Redis Stack cloud instance from Redis (the company).  To use this, [sign up here](https://redis.com/try-free/) and make a note of your Redis host, port and password.  You'll need those to configure each component.
 
-## The Redis Data Model
+## The Redis Data Model and Key Naming Strategy
 
-TODO
+The application stores each image plus associated metadata in its own [Redis Hash](https://redis.io/docs/data-types/hashes/).  A Hash in Redis can be thought of as a flat map of name/value properties.  Each Hash is stored in its own key in Redis.
+
+The key naming strategy is as follows.  Each Hash's key has a fixed prefix `image:` followed by the [UNIX timestamp](https://en.wikipedia.org/wiki/Unix_time) representing the time that the image was captured.
+
+For example the key `image:1681844748` would contain a Hash with data for an image taken on Tuesday 18th April 2023 at 7:05:48pm GMT.
+
+Each key contains a hash with the following name/value pairs:
+
+* `mime_type`: The [MIME type](https://en.wikipedia.org/wiki/Media_type) for the captured image data.  This will always be `image/jpeg` unless you change it and the image capture format in the `capture.py` script.
+* `timestamp`: The [UNIX timestamp](https://en.wikipedia.org/wiki/Unix_time) that the image was captured at, as recoded from the Raspberry Pi's clock.  This will be the same value as the timestamp in the key name.
+* `image_data`: A binary representation of the bytes for the image captured by the camera.  This will be a [JPEG image](https://en.wikipedia.org/wiki/JPEG) unless you change the capture format in `capture.py`.
+
+Here's a complete example, with the image data truncated for brevity:
+
+```
+> HGETALL image:1681843615
+1) "mime_type"
+2) "image/jpeg"
+3) "timestamp"
+4) "1681843615"
+5) "image_data"
+6) "\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00...
+```
+With the camera that I used ([Raspberry Pi Camera Module 2.1](https://www.raspberrypi.com/products/camera-module-v2/) capturing at 3280x2464 pixels - configurable in `capture.py`) you can expect each Hash to require around 2Mb of RAM in Redis.
 
 ## (Optional, but Recommended): RedisInsight
 
