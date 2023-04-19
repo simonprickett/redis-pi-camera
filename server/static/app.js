@@ -1,5 +1,3 @@
-const API_PREFIX = 'api';
-
 // Load image data from the backend...
 async function renderImages() {
   function renderImageData(dataItems) {
@@ -10,6 +8,8 @@ async function renderImages() {
 
     return html;
   }
+
+  const API_PREFIX = 'api';
   const imageResponse = await fetch(`/${API_PREFIX}/images`);
   const imageIds = await imageResponse.json();
 
@@ -26,9 +26,6 @@ async function renderImages() {
     const imageDetailResponse = await fetch(`${API_PREFIX}/data/${imageId}`)
     const imageData = await imageDetailResponse.json();
     const imageUrl = `/${API_PREFIX}/image/${imageId}`;
-    console.log(imageData);
-    console.log(imageUrl);
-
     const imageHTML = `
       <div class="card m-4">
         <div class="card-image">
