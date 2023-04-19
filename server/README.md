@@ -4,7 +4,11 @@
 
 ## Overview
 
-TODO
+This is a very basic "viewer" type front end that shows all of the images in the Redis database along with their metadata.
+
+It isn't built with performance or scale in mind - a better implementation would use some sort of lazy loading and pagination strategy.
+
+The server is built using Python and the Flask framework.  The front end web application is a single web page, styled with Bulma and using ES6 JavaScript with no JavaScript framework complexity / bloat.
 
 ## How it Works
 
