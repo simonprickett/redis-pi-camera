@@ -6,7 +6,7 @@ This repository contains an example application that demonstrates how to capture
 
 Here's what the front end looks like when a few images have been captured by the Raspberry Pi...
 
-TODO IMAGE
+![Front end showing captured images](server_component_running.png)
 
 And here's a Raspberry Pi with a camera attached:
 
