@@ -16,7 +16,76 @@ I haven't tested with the [Raspberry Pi Camera Module v3](https://www.raspberryp
 
 ## How it Works
 
-TODO
+All of the code for this component is in a single file: `capture.py`.  Here's a high level run through of how it works...  You should also refer to the redis-py documentation and [Raspberry Pi's Picamera2 library documentation](https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf).
+
+The first thing that the script does is initialize and configure the `Picamera2` library:
+
+```python
+picam2 = Picamera2()
+picam2.start_preview(Preview.NULL)
+camera_config = picam2.still_configuration
+picam2.configure(camera_config)
+...
+picam2.start()
+```
+
+Use the `Picamera2` documentation to adjust the camera configuration in `camera_config` e.g. to capture lower resolution pictures.  This configuration assumes we are running on a headless Raspberry Pi so there's no preview window required.
+
+Next, a connection to Redis is established, using the value of an environment variable:
+
+```python
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
+```
+
+The code then enters an infinite loop, in which is captures an image plus some metadata from the camera, stores it in Redis and sleeps for 10 seconds before doing it all again.
+
+We want to capture the image into a file like structure in memory, rather than write it to the filesystem.  We use an [in memory binary stream](https://docs.python.org/3/library/io.html#binary-i-o) declared like this:
+
+```python
+image_data = io.BytesIO()
+```
+
+An image from the camera is grabbed into that binary stream buffer, and we work out the current UNIX timestamp (seconds since 1 January 1970):
+
+```python
+image_metadata = picam2.capture_file(image_data, format="jpeg")
+current_timestamp = int(time.time())
+```
+
+The return value of `picam2.capture_file` is some metadata from the camera.  This isn't currently stored in Redis, but is printed out so you can determine if any of it is useful to you.  See later in this file for an example.
+
+Now it's time to create a Hash in Redis and store our image plus a couple of other pieces of data there:
+
+```python
+redis_key = f"image:{current_timestamp}"
+data_to_save = dict()
+data_to_save["image_data"] = image_data.getvalue()
+data_to_save["timestamp"] = current_timestamp
+data_to_save["mime_type"] = "image/jpeg"
+```
+
+First, we create the key name we're going to use when storing the Hash.  It's `image:<timestamp>`.
+
+`data_to_save` is a Python dictionary containing the name/value pairs to store in the Redis Hash. This needs to be a flat map of name/value pairs - nested structure isn't allowed in a Redis Hash.  If you want more complex data structure, use the [Redis JSON data type](https://redis.io/docs/stack/json/) in Redis Stack.
+
+Hashes in Redis are schemaless, so if you add extra fields there's no need to change any database schema (if you're looking for one, it doesn't exist!).  You'll just need to modify any application code that reads the Hashes to use new fields.
+
+We store the bytes of the image, the timestamp and the MIME or media type of the image... so that any front end knows what encoding the data in `image_data` is in.
+
+Saving the Hash to Redis is then simply a matter of running the [`HSET` command](https://redis.io/commands/hset/), passing it the key name and dict of name/value pairs to store:
+
+```python
+redis_client.hset(redis_key, mapping = data_to_save)
+```
+
+As it stands, the images will stay in Redis until manually deleted.  If you want to set a time to live on the image, use the [EXPIRE command](https://redis.io/commands/expire/).  Redis will consider the Hash deleted after the number of seconds you specify has passed, freeing up resources associated with it on the Redis server.  To implement this with a 1hr expiry time, modify the code as follows:
+
+```python
+redis_client.hset(redis_key, mapping = data_to_save)
+redis_client.expire(redis_key, 3600) # 60 secs = 1 min x 60 = 1hr
+```
+
+Redis also has an [EXPIREAT command](https://redis.io/commands/expireat/) if you prefer to specify a time and date for expiry, rather than a number of seconds in the future.
 
 ## Setup
 
