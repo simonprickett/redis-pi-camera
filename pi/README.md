@@ -1,4 +1,4 @@
-# TODO capture README
+# Image Capture Component for Raspberry Pi with Camera Module
 
 ![Raspberry Pi 3 with Camera Module attached](../raspberry_pi_3_with_camera_module.jpg)
 
