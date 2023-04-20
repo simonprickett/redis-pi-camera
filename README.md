@@ -18,8 +18,8 @@ And here's a Raspberry Pi with a camera attached:
 
 This repository contains two components:
 
-* **Image capture component:** This is written in Python and runs on a Raspberry Pi with a camera module attached.  It takes a new picture every so often and stores it, plus some basic metadata, in Redis.  Python was the obvious implementation choice here as Raspberry Pi provides an excellent Python library for their camera modules. See the `pi` folder for full details.
-* **Front end component:** This comprises a server written in Python using the Flask framework.  It reads data from Redis and uses a HTML front end to display it in a grid view.  It uses HTML, JavaScript and the Bulma framework.  These were all arbitrary choices - this component could equally be built with Node.js and Express for example.  See the `server` folder for full details.
+* **[Image capture component](pi/):** This is written in Python and runs on a Raspberry Pi with a camera module attached.  It takes a new picture every so often and stores it, plus some basic metadata, in Redis.  Python was the obvious implementation choice here as Raspberry Pi provides an excellent Python library for their camera modules. See the `pi` folder for full details.
+* **[Front end component](server/):** This comprises a server written in Python using the Flask framework.  It reads data from Redis and uses a HTML front end to display it in a grid view.  It uses HTML, JavaScript and the Bulma framework.  These were all arbitrary choices - this component could equally be built with Node.js and Express for example.  See the `server` folder for full details.
 
 Details of how each component works including how to configure and run it can be found in the README files in each of the above folders.
 
