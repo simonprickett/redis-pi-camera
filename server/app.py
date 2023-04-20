@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from flask import Flask, render_template, send_file
 import io
 import os
@@ -15,6 +16,9 @@ IMAGE_META_DATA_FIELDS = [
 ]
 
 STRING_ENCODING = "utf-8"
+
+# Load environment variables from .env file.
+load_dotenv()
 
 # Initialise Flask
 app = Flask(__name__)
