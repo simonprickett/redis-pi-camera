@@ -20,17 +20,31 @@ TODO
 
 ## Setup
 
-To get this component working, you'll need to connect your camera to the Raspberry Pi, ensure the operating system is configured correctly for it and install some Python dependencies.
+To get this component working, you'll need to connect your camera to the Raspberry Pi, ensure the operating system is configured correctly for it and install some Python dependencies (to connect to Redis).
+
+These instructions assume you are running the latest version of Raspberry Pi OS.  They have been tested with the following version:
+
+```
+$ cat /etc/os-release
+PRETTY_NAME="Raspbian GNU/Linux 11 (bullseye)"
+NAME="Raspbian GNU/Linux"
+VERSION_ID="11"
+VERSION="11 (bullseye)"
+VERSION_CODENAME=bullseye
+ID=raspbian
+ID_LIKE=debian
+
+$ uname -s -r -v -m
+Linux 6.1.21-v7+ #1642 SMP Mon Apr  3 17:20:52 BST 2023 armv7l
+```
 
 ### Camera Setup 
 
-TODO
+Setting up the camera may require some changes to the operating system configuration of the Raspberry Pi.  This is what worked for me on the Raspberry Pi 3B using the Camera Module v2.1.  
 
-Raspberry Pi 3B with Camera Module v2.1 and Raspberry Pi OS Bullseye
+First, connect the camera to the Raspberry Pi with the ribbon cable provided. If you are unsure how to do this, follow Raspberry Pi's [instructions here](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2).
 
-TODO info...
-
-Ensure the following are in `/boot/config.txt` and reboot the Raspberry Pi after making any changes.
+Then, as the root user (`sudo vi /boot/config.txt`), ensure the following are in `/boot/config.txt` and add them if not:
 
 ```
 camera_auto_detect=0
@@ -41,6 +55,8 @@ dtoverlay=imx219
 
 The `imx219` value may differ for your camera.  I was using the Raspberry Pi Camera Module v2.1.  If you are using something different, you'll need to research appropriate values for your camera.
 
+If you made any changes, save them and reboot the Raspberry Pi.
+
 ### Python Setup
 
 You need Python 3.7 or higher (I've tested this with Python 3.9.2.  To check your Python version:
@@ -49,9 +65,9 @@ You need Python 3.7 or higher (I've tested this with Python 3.9.2.  To check you
 python3 --version
 ```
 
-If you need to upgrade your Python version, use your operating system's package manager or refer to [this guide from raspberrypitips.com](https://raspberrytips.com/install-latest-python-raspberry-pi/).
+The operating system should have been supplied with an appropriate Python version pre-installed.  If you find that you need to upgrade your Python version, use your operating system's package manager or refer to [this guide from raspberrypitips.com](https://raspberrytips.com/install-latest-python-raspberry-pi/).
 
-You'll also need the Pip package manager.  Install with:
+You'll also need the Pip package manager.  Install it with:
 
 ```
 sudo apt install python3-pip
