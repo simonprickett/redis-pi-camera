@@ -8,6 +8,8 @@ Here's what the front end looks like when a few images have been captured by the
 
 ![Front end showing captured images](server_component_running.png)
 
+(Images are somewhat out of focus as the camera I am using doesn't have auto focus and I didn't adjust its position for these pics, they were just test data!)
+
 And here's a Raspberry Pi with a camera attached:
 
 ![Raspberry Pi 3 with Camera Module attached](raspberry_pi_3_with_camera_module.jpg)

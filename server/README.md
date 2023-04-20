@@ -2,6 +2,8 @@
 
 ![Front end displaying a selection of images](../server_component_running.png)
 
+(Images are somewhat out of focus as the camera I am using doesn't have auto focus and I didn't adjust its position for these pics, they were just test data!)
+
 ## Overview
 
 This is a very basic "viewer" type front end that shows all of the images in the Redis database along with their metadata.
