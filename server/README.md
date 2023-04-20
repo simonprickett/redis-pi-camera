@@ -64,6 +64,8 @@ export REDIS_URL=redis://myhost:9999/
 
 Be sure to configure both the capture script and the separate server component to talk to the same Redis instance!
 
+Alternatively, you can create a file in the `server` folder called `.env` and store your environment variable values there.  See `env.example` for an example.  Don't commit `.env` to source control, as your Redis credentials should be considered a secret and managed as such!
+
 ### Running the Server
 
 Having got everything set up, start the server like so:
