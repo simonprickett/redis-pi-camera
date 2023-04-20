@@ -4,7 +4,15 @@
 
 ## Overview
 
-TODO
+This folder contains the Python code for the image capture component of this project.  It runs on a Raspberry Pi with a Raspberry Pi Camera Module attached.
+
+Every 10 or so seconds, the code takes a new picture in JPEG format and stores it in a Redis Hash along with some basic metadata.  The key name for each hash is `image:<unix time stamp when image was captured>`.
+
+I've tested this on a [Raspberry Pi 3B](https://www.raspberrypi.com/products/raspberry-pi-3-model-b/) using the [Raspberry Pi Camera Module v2.1](https://www.raspberrypi.com/products/camera-module-v2/).  Other models of Raspberry Pi that have the camera connector ([3A+](https://www.raspberrypi.com/products/raspberry-pi-3-model-a-plus/), [3B+](https://www.raspberrypi.com/products/raspberry-pi-3-model-b-plus/), [4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) etc) should work too.
+
+I haven't tested with the [Raspberry Pi Camera Module v3](https://www.raspberrypi.com/products/camera-module-3/) or the [High Quality Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/).  I would imagine that the v3 is a good choice for this project as it has auto focus.  The pictures from my v2.1 camera can be blurry as there's no auto focus.
+
+**Note:** As Redis keeps a copy of all the data in memory, you should bear in mind that an 8Mb image file will require at least 8Mb of RAM on the Redis server.  As it stands, the code doesn't expire pictures from Redis after a period of time, but you could easily add this using a call to the [`EXPIRE`](https://redis.io/commands/expire/) command whenever you add a new image Hash.
 
 ## How it Works
 
