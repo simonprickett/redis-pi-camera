@@ -2,8 +2,11 @@ import io
 import os
 import redis
 import time
+from dotenv import load_dotenv
 from picamera2 import Picamera2, Preview
 from libcamera import controls
+
+load_dotenv()
 
 # Picamera2 docs https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 picam2 = Picamera2()
