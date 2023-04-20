@@ -1,4 +1,4 @@
-# TODO server README
+# Server Component / Front End
 
 ![Front end displaying a selection of images](../server_component_running.png)
 
