@@ -14,6 +14,10 @@ And here's a Raspberry Pi with a camera attached:
 
 ![Raspberry Pi 3 with Camera Module attached](raspberry_pi_3_with_camera_module.jpg)
 
+## Watch the Video
+
+I'll be doing a livestream about this project on Thursday April 27th 2023 at 2:30PM UTC. [Subscribe on YouTube](https://www.youtube.com/watch?v=OTDZIK55DX0) to get notified when I'm live!
+
 ## Components of the Demo
 
 This repository contains two components:
