@@ -34,6 +34,31 @@ First, let's take a look at how the project is organised.
 
 ### The Flask Application
 
+The server-side Flask application is contained entirely in the `app.py` file.  This will be a high level walk through - if you'd like to lean more about Flask, check out the [excellent documentation](https://flask.palletsprojects.com/en/2.2.x/quickstart/).
+
+On startup, the code initialises Flask and connects to Redis:
+
+```python
+app = Flask(__name__)
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
+```
+
+The rest of the application is broken down into code for 4 different routes as follows:
+
+#### Getting the Home Page
+
+TODO
+
+#### Getting a List of Available Images
+
+TODO
+
+#### Getting the Metadata for a Specific Image
+
+TODO
+
+#### Getting the Binary Data for a Specific Image
+
 TODO
 
 ### The Web Front End
