@@ -89,7 +89,46 @@ With a really big dataset, we'd want to do something better than this.  At minim
 
 #### Getting the Metadata for a Specific Image
 
-TODO
+This route returns all of the metadata about a specific image from Redis.  That means every field in the image's Redis Hash except for the one holding the actual image data.
+
+One approach to getting all the fields except one would be to just get all of them with the `HGETALL` command, then discard what we don't want in the Flask/Python layer.  As the field we don't want contains an entire image and could be several megabytes in size... this is wasteful and causes a lot of unnecessary work on the Redis server and data transfer bandwidth between the Redis server and Flask/Python application.
+
+There isn't an "all except" command or variant of `HGETALL`, so instead I'm using the `HMGET command`, passing it a list of every field in the hash except the image data one.  This isn't ideal, as if the capture script added more meta data in future I have to adjust the code here to read it and pass it to the front end, but it's what works!
+
+```python
+IMAGE_DATA_FIELD_NAME = "image_data"
+IMAGE_MIME_TYPE_FIELD_NAME = "mime_type"
+IMAGE_TIMESTAMP_FIELD_NAME = "timestamp"
+IMAGE_META_DATA_FIELDS = [
+    IMAGE_TIMESTAMP_FIELD_NAME,
+    IMAGE_MIME_TYPE_FIELD_NAME
+    # Anything else that is captured on the Pi can go here.
+]
+...
+
+@app.route(f"/{API_ROUTE_PREFIX}/data/<image_id>")
+def get_image_data(image_id):
+    # Look for the image meta data in Redis.
+    image_meta_data = redis_client.hmget(f"{IMAGE_KEY_PREFIX}:{image_id}", IMAGE_META_DATA_FIELDS)
+```
+
+If the image isn't found, we'll get nothing back and should return a 404 to the front end:
+
+```python
+if image_meta_data[0] is None:
+      return f"Image {image_id} not found.", 404
+```
+
+If we did get data, we convert it to a Python dictionary, decoding the String values to UTF-8 and returning the completed dictionary.  Flask will return this as a JSON object response to the front end:
+
+```python
+data_dict = dict()
+data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode(STRING_ENCODING)
+data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode(STRING_ENCODING)
+return data_dict
+```
+
+This could also probably be done more dynamically with less hard coding of field names, but it works for this demo!
 
 #### Getting the Binary Data for a Specific Image
 
