@@ -38,7 +38,77 @@ TODO
 
 ### The Web Front End
 
-TODO
+When the browser initially receives the HTML for the home page, there are no images contained in it.  The image details get loaded into the `div` whose ID is `imageArea` dynamically when the JavaScript runs.  Initially, it's just an empty `div`:
+
+```html
+<div class="columns is-flex-wrap-wrap" id="imageArea">
+```
+
+The `columns` and `is-flex-wrap-wrap` classes are defined in Bulma and give us a flexbox type grid.
+
+The JavaScript file is loaded with the `defer` option, so it only starts to execute after the browser has parsed the page's HTML.  Once it starts to execute, it requests the `/api/images` route from the Flask server.
+
+If no images are returned, a notification is shown.  This is already in the HTML for the page, but is initially hidden.  It's shown as needed by removing the Bulma helper class `is-hidden`:
+
+```javascript
+  const noImagesNotification = document.getElementById('noImagesNotification');
+  noImagesNotification.classList.remove('is-hidden');
+```
+
+If the Flask server returned a JSON array of image IDs, we loop over it.  In each loop iteration, we get the ID (UNIX timestamp) of the image, and use that to request more information about that specific image from the Flask server:
+
+```javascript
+const imageDetailResponse = await fetch(`${API_PREFIX}/data/${imageId}`)
+const imageData = await imageDetailResponse.json();
+```
+
+Using the image ID (timestamp) we can also work out what URL we need to load the image from the Flask server:
+
+```javascript
+const imageUrl = `/${API_PREFIX}/image/${imageId}`;
+```
+
+With the value in `imageUrl` and metadata values in `imageData`, we can then use a template string and a HTML fragment to create the HTML we need to display this item on the page:
+
+```javascript
+const imageHTML = `
+  <div class="card m-4">
+    <div class="card-image">
+      <figure class="image is-4by3">
+        <img src="${imageUrl}" alt="Image ${imageId}">
+      </figure>
+    </div>
+    <div class="card-content">
+      <div class="media">
+        <div class="media-content">
+          <p class="title is-4">${new Date(parseInt(imageId * 1000, 10)).toUTCString()}</p>
+        </div>
+      </div>
+
+      <div class="content">
+        <ul>
+          ${renderImageData(imageData)}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>`;
+```
+
+The two complexities worth looking at in the above are:
+
+1. TODO
+2. TODO
+
+Then, all that remains is to add the HTML into the `div` whose ID is `imageArea` and move on to the next item in the loop until we're done:
+
+```javascript
+// Before the loop so we aren't looking this up each iteration...
+const imageArea = document.getElementById('imageArea');
+
+// In the loop...
+imageArea.innerHTML = `${imageArea.innerHTML}${imageHTML}`;
+```
 
 ## Setup
 
