@@ -98,7 +98,7 @@ const imageHTML = `
 The two complexities worth looking at in the above are:
 
 1. I wanted to display the timestamp that the picture was taken in a meaningful format.  To do this, the timestamp gets multiplied by 1000 to make it a milliseconds timestamp.  Javacript has a `Date` constructor that accepts these, and the resulting `Date` object can be converted to a decent human readable date using `toUTCString`.  So the code to display the date is: `new Date(parseInt(imageId * 1000, 10)).toUTCString()`.
-2. TODO the renderImageData function.
+1. I also wanted to display all image metadata, without hard coding the names of the metadata fields.  This is so that the front end will just display anything passed to it, and adding more metadata in the capture script won't require code changes in the front end.  To do this, I created a utility function that takes an object containing name/value pairs and renders them out as a HTML list items:
 
 ```javascript
 function renderImageData(dataItems) {
@@ -111,7 +111,17 @@ function renderImageData(dataItems) {
 }
 ```
 
-Then, all that remains is to add the HTML into the `div` whose ID is `imageArea` and move on to the next item in the loop until we're done:
+This is then called from the template string like so:
+
+```javascript
+<div class="content">
+  <ul>
+    ${renderImageData(imageData)}
+  </ul>
+</div>
+```
+
+Now, all that remains is to add the HTML into the `div` whose ID is `imageArea` and move on to the next item in the loop until we're done:
 
 ```javascript
 // Before the loop so we aren't looking this up each iteration...
