@@ -95,7 +95,35 @@ TODO
 
 This route is unlike the others in that it doesn't return a text-based response.  Here, given the timestamp ID for an image, we want to return the data for that image, encoded in a way that the browser will recognise it as an image and render it correctly.
 
-TODO...
+To achieve this, two fields need to be retrieved from the image's Hash in Redis.  This can be done with the [HMGET command](https://redis.io/commands/hmget/). To get the Redis key for the desired image, we add the `image:` prefix to the image ID passed into the route:
+
+```python
+@app.route(f"/{API_ROUTE_PREFIX}/image/<image_id>")
+def get_image(image_id):
+    # Look for the image data in Redis.
+    image_data = redis_client.hmget(f"{IMAGE_KEY_PREFIX}:{image_id}", [ IMAGE_DATA_FIELD_NAME, IMAGE_MIME_TYPE_FIELD_NAME ])
+```
+
+If the image isn't found, we'll get nothing back and should return a 404 to the front end:
+
+```python
+if image_data[0] is None:
+    return f"Image {image_id} not found.", 404
+```
+
+If the image was found, we have a 2 element list in `image_data`... with element 0 being the actual image data bytes, and element [1] the MIME type.
+
+We need to load the raw image data into something that looks like an in memory file so that Flask can return it to the front end.  We do that using Python's `BytesIO` object ([docs](https://docs.python.org/3/library/io.html#binary-i-o)):
+
+```python
+    image_file = io.BytesIO(image_data[0])
+
+    # Rewind the image file to the start...
+    image_file.seek(0)
+
+    # Get the MIME type from the Redis response, and decode it from binary.
+    return send_file(image_file, mimetype=image_data[1].decode(STRING_ENCODING))
+```
 
 ### The Web Front End
 
