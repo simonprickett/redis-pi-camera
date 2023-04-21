@@ -91,9 +91,9 @@ With a really big dataset, we'd want to do something better than this.  At minim
 
 This route returns all of the metadata about a specific image from Redis.  That means every field in the image's Redis Hash except for the one holding the actual image data.
 
-One approach to getting all the fields except one would be to just get all of them with the `HGETALL` command, then discard what we don't want in the Flask/Python layer.  As the field we don't want contains an entire image and could be several megabytes in size... this is wasteful and causes a lot of unnecessary work on the Redis server and data transfer bandwidth between the Redis server and Flask/Python application.
+One approach to getting all the fields except one would be to just get all of them with the [`HGETALL` command](https://redis.io/commands/hgetall/), then discard what we don't want in the Flask/Python layer.  As the field we don't want contains an entire image and could be several megabytes in size... this is wasteful and causes a lot of unnecessary work on the Redis server and data transfer bandwidth between the Redis server and Flask/Python application.
 
-There isn't an "all except" command or variant of `HGETALL`, so instead I'm using the `HMGET command`, passing it a list of every field in the hash except the image data one.  This isn't ideal, as if the capture script added more meta data in future I have to adjust the code here to read it and pass it to the front end, but it's what works!
+There isn't an "all except" command or variant of `HGETALL`, so instead I'm using the [`HMGET command`](https://redis.io/commands/hmget/), passing it a list of every field in the hash except the image data one.  This isn't ideal, as if the capture script added more meta data in future I have to adjust the code here to read it and pass it to the front end, but it's what works!
 
 ```python
 IMAGE_DATA_FIELD_NAME = "image_data"
@@ -116,7 +116,7 @@ If the image isn't found, we'll get nothing back and should return a 404 to the 
 
 ```python
 if image_meta_data[0] is None:
-      return f"Image {image_id} not found.", 404
+    return f"Image {image_id} not found.", 404
 ```
 
 If we did get data, we convert it to a Python dictionary, decoding the String values to UTF-8 and returning the completed dictionary.  Flask will return this as a JSON object response to the front end:
