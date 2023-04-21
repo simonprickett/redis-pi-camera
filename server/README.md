@@ -47,7 +47,17 @@ The rest of the application is broken down into code for 4 different routes as f
 
 #### Getting the Home Page
 
-TODO
+This is very simple.  Whenever `/` is requested, simply return the contents of `templates/index.html` processing any template directives in there.  The only logic in the index file is one line that works out the relative path to the JavaScript file when including it in the HTML returned.  This route returns a HTML page that links to the JavaScript file and the Bulma CSS file.
+
+Bulma's CSS is hosted on an external CDN so there's no code here to serve it.  Flask handles serving static files for us, so we don't need additional code for the JavaScript file either.
+
+Here's the entire route:
+
+```python
+@app.route("/")
+def home():
+    return render_template("index.html")
+```
 
 #### Getting a List of Available Images
 
