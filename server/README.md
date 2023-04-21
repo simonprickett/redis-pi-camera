@@ -97,8 +97,19 @@ const imageHTML = `
 
 The two complexities worth looking at in the above are:
 
-1. TODO
-2. TODO
+1. I wanted to display the timestamp that the picture was taken in a meaningful format.  To do this, the timestamp gets multiplied by 1000 to make it a milliseconds timestamp.  Javacript has a `Date` constructor that accepts these, and the resulting `Date` object can be converted to a decent human readable date using `toUTCString`.  So the code to display the date is: `new Date(parseInt(imageId * 1000, 10)).toUTCString()`.
+2. TODO the renderImageData function.
+
+```javascript
+function renderImageData(dataItems) {
+  let html = '';
+  for (const k in dataItems) {
+    html = `${html}<li><span class="has-text-weight-bold">${k}:</span> ${dataItems[k]}</li>`;
+  }
+
+  return html;
+}
+```
 
 Then, all that remains is to add the HTML into the `div` whose ID is `imageArea` and move on to the next item in the loop until we're done:
 
