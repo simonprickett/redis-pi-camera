@@ -43,6 +43,8 @@ app = Flask(__name__)
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 ```
 
+I've chosen to configure the Redis client not to decode the bytes responses from Redis (by omitting `decode_responses=True`).  This is because we'll need the raw image data stored in Redis without decoding.  So whenever we read String data from Redis, we will need to decode it back to a UTF-8 representation using `.decode("utf-8")` and you will see this throughout the code.
+
 The rest of the application is broken down into code for 4 different routes as follows:
 
 #### Getting the Home Page
@@ -61,7 +63,29 @@ def home():
 
 #### Getting a List of Available Images
 
-TODO
+We need an API type route that returns a JSON array containing the IDs of all of the images in Redis.  This basically means we want the timestamp part of every key in Redis that begins with `image:`.
+
+In this basic demonstration, I've used the `SCAN` command to get these in a reasonably scalable manner.  To narrow down what's returned from the scan, I'm passing in a key prefix of `image:` and telling Redis I only want keys whose data type is `HASH`.
+
+The code works by iterating over the key names returned by `SCAN`, adding them to a list.  Before adding each key name, it's decoded to a UTF-8 string and the key prefix `image:` is removed as the front end doesn't need to know about this and it also saves a little network bandwidth between the Flask server and front end.
+
+```python
+@app.route(f"/{API_ROUTE_PREFIX}/images")
+def get_all_images():
+    all_images = []
+    # Scan the Redis keyspace for all keys whose name begins with IMAGE_KEY_PREFIX.
+    for img in redis_client.scan_iter(match=f"{IMAGE_KEY_PREFIX}:*", _type="HASH"):
+        # Return only the timestamp part of the Redis key.
+        all_images.append(img.decode(STRING_ENCODING).removeprefix(f"{IMAGE_KEY_PREFIX}:"))
+
+    # Most recent timestamp first...
+    all_images.sort(reverse=True)
+    return all_images
+```
+
+Before returning the data to the front end, it's sorted in reverse order, so that the most recent image timestamp is first.
+
+With a really big dataset, we'd want to do something better than this.  At minimum, we'd want to page through the dataset in multiple calls to this route.  We might also want to specify some search and ordering criteria based on metadata about each image held in Redis.  For that, the [Search capability of Redis Stack](https://redis.io/docs/stack/search/) would be a good approach and I may update this repository with that in future.
 
 #### Getting the Metadata for a Specific Image
 
