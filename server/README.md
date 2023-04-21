@@ -65,7 +65,7 @@ def home():
 
 We need an API type route that returns a JSON array containing the IDs of all of the images in Redis.  This basically means we want the timestamp part of every key in Redis that begins with `image:`.
 
-In this basic demonstration, I've used the `SCAN` command to get these in a reasonably scalable manner.  To narrow down what's returned from the scan, I'm passing in a key prefix of `image:` and telling Redis I only want keys whose data type is `HASH`.
+In this basic demonstration, I've used the Redis [`SCAN` command](https://redis.io/commands/scan/) to get these in a reasonably scalable manner for a simple demonstration.  To narrow down what's returned from the scan, I'm passing in a key prefix of `image:` and telling Redis I only want keys whose data type is `HASH`.
 
 The code works by iterating over the key names returned by `SCAN`, adding them to a list.  Before adding each key name, it's decoded to a UTF-8 string and the key prefix `image:` is removed as the front end doesn't need to know about this and it also saves a little network bandwidth between the Flask server and front end.
 
@@ -93,7 +93,9 @@ TODO
 
 #### Getting the Binary Data for a Specific Image
 
-TODO
+This route is unlike the others in that it doesn't return a text-based response.  Here, given the timestamp ID for an image, we want to return the data for that image, encoded in a way that the browser will recognise it as an image and render it correctly.
+
+TODO...
 
 ### The Web Front End
 
