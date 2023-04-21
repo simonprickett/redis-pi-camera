@@ -10,9 +10,33 @@ This is a very basic "viewer" type front end that shows all of the images in the
 
 It isn't built with performance or scale in mind - a better implementation would use some sort of lazy loading and pagination strategy.
 
-The server is built using Python and the Flask framework.  The front end web application is a single web page, styled with [Bulma](https://bulma.io/) and using vanilla ES6 JavaScript with no JavaScript framework complexity / bloat.
+The server is built using Python and the [Flask framework](https://flask.palletsprojects.com/).  The front end web application is a single web page, styled with [Bulma](https://bulma.io/) and using vanilla ES6 JavaScript with no JavaScript framework complexity / bloat.
 
 ## How it Works
+
+### Structure
+
+First, let's take a look at how the project is organised.
+
+* All of the code for the server is in a single file: `app.py`.  This uses the Flask framework and maintains a connection to Redis.
+* The HTML for the front end is a Flask template, contained in `templates/index.html`.  The application doesn't actually do any templating so `index.html` is essentially a static file, but I set it up as a template in case you want to build on this start point and do something dynamic on the home page.  It also means that I could use a tiny bit of templating to create the `<script>` tag that load the JavaScript for the front end...
+* The JavaScript that runs on the front end is a static file, contained in `static/app.js`.  Flask knows how to serve this when asked for a URL `/static/app.js`.  You can see how this is resolved at the bottom of the `index.html` file:
+
+```html
+<script type="text/javascript" src="{{ url_for('static', filename = 'app.js') }}" defer></script>
+```
+
+* There is no CSS file for this project, all CSS is provided by the [Bulma framework](https://bulma.io/).  It's included in the `<head>` of `index.html` and hosted on a CDN:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+```
+
+### The Flask Application
+
+TODO
+
+### The Web Front End
 
 TODO
 
