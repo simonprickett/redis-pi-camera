@@ -16,7 +16,7 @@ And here's a Raspberry Pi with a camera attached:
 
 ## Watch the Video
 
-I'll be doing a livestream about this project on Thursday April 27th 2023 at 2:30PM UTC. [Subscribe on YouTube](https://www.youtube.com/watch?v=OTDZIK55DX0) to get notified when I'm live!
+Watch the video for a full walkthrough of this project.  [Watch on YouTube](https://www.youtube.com/watch?v=OTDZIK55DX0).
 
 ## Components of the Demo
 
