@@ -43,6 +43,8 @@ When you're done with the Docker container, stop it like this:
 docker-compose down
 ```
 
+Your data is saved in a [Redis Append Only File](https://redis.io/docs/management/persistence/) in the `redisdata` folder.  Redis Stack will reload the dataset from this file when you restart the container.
+
 With the container running, you can access the [Redis CLI](https://redis.io/docs/ui/cli/) using this command:
 
 ```
