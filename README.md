@@ -67,6 +67,7 @@ Each key contains a hash with the following name/value pairs:
 
 * `mime_type`: The [MIME type](https://en.wikipedia.org/wiki/Media_type) for the captured image data.  This will always be `image/jpeg` unless you change it and the image capture format in the `capture.py` script.
 * `timestamp`: The [UNIX timestamp](https://en.wikipedia.org/wiki/Unix_time) that the image was captured at, as recoded from the Raspberry Pi's clock.  This will be the same value as the timestamp in the key name.
+* `lux`: The [lux](https://en.wikipedia.org/wiki/Lux) value captured by the camera when the image was taken.
 * `image_data`: A binary representation of the bytes for the image captured by the camera.  This will be a [JPEG image](https://en.wikipedia.org/wiki/JPEG) unless you change the capture format in `capture.py`.
 
 Here's a complete example, with the image data truncated for brevity:
@@ -76,9 +77,11 @@ Here's a complete example, with the image data truncated for brevity:
 1) "mime_type"
 2) "image/jpeg"
 3) "timestamp"
-4) "1681843615"
-5) "image_data"
-6) "\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00...
+4) "lux"
+5) "268"
+6) "1681843615"
+7) "image_data"
+8) "\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00...
 ```
 With the camera that I used ([Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) capturing at 4608x2592 pixels - configurable in `capture.py`) you can expect each Hash to require around 1Mb of RAM in Redis.
 
