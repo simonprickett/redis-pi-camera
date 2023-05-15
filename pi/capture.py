@@ -12,13 +12,17 @@ load_dotenv()
 # how long to keep them.
 IMAGE_CAPTURE_FREQUENCY = int(os.getenv("IMAGE_CAPTURE_FREQUENCY"))
 IMAGE_EXPIRY = int(os.getenv("IMAGE_EXPIRY"))
+CAMERA_AUTOFOCUS = os.getenv("CAMERA_AUTOFOCUS") == "1"
 
 # Picamera2 docs https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 picam2 = Picamera2()
 picam2.start_preview(Preview.NULL)
 camera_config = picam2.still_configuration
+
 # For a v3 Camera Module, set continuous autofocus.
-picam2.set_controls({"AfMode": controls.AfModeEnum.Continuous})
+if CAMERA_AUTOFOCUS == True:
+    picam2.set_controls({"AfMode": controls.AfModeEnum.Continuous})
+
 # Tweak camera_config as needed before calling configure.
 picam2.configure(camera_config)
 
@@ -32,37 +36,39 @@ picam2.start()
 # an image every so many seconds...
 
 while True:
-  # For the Camera Module 3, trigger an autofocus cycle.
-  picam2.autofocus_cycle()
-  image_data = io.BytesIO()
+    # For the Camera Module 3, trigger an autofocus cycle.
+    if CAMERA_AUTOFOCUS == True:
+        picam2.autofocus_cycle()
 
-  # Take a picture and grab the metadata at the same time.
-  image_metadata = picam2.capture_file(image_data, format="jpeg")
-  current_timestamp = int(time.time())
+    image_data = io.BytesIO()
 
-  # Prepare data to save in Redis...
-  redis_key = f"image:{current_timestamp}"
-  data_to_save = dict()
-  data_to_save["image_data"] = image_data.getvalue()
-  data_to_save["timestamp"] = current_timestamp
-  data_to_save["mime_type"] = "image/jpeg"
-  data_to_save["lux"] = int(image_metadata["Lux"])
-  # Add any other flat name/value pairs you want to save into this dict
-  # e.g. light meter value, noise values, whatever really...
+    # Take a picture and grab the metadata at the same time.
+    image_metadata = picam2.capture_file(image_data, format="jpeg")
+    current_timestamp = int(time.time())
 
-  # Store data in a Redis Hash (flat map of name/value pairs at a single
-  # Redis key), also set an expiry time for the image.
-  pipe = redis_client.pipeline(transaction=False)
-  pipe.hset(redis_key, mapping = data_to_save)
-  pipe.expire(redis_key, IMAGE_EXPIRY)
-  pipe.execute()
+    # Prepare data to save in Redis...
+    redis_key = f"image:{current_timestamp}"
+    data_to_save = dict()
+    data_to_save["image_data"] = image_data.getvalue()
+    data_to_save["timestamp"] = current_timestamp
+    data_to_save["mime_type"] = "image/jpeg"
+    data_to_save["lux"] = int(image_metadata["Lux"])
+    # Add any other flat name/value pairs you want to save into this dict
+    # e.g. light meter value, noise values, whatever really...
 
-  print(f"Stored new image at {redis_key}")
+    # Store data in a Redis Hash (flat map of name/value pairs at a single
+    # Redis key), also set an expiry time for the image.
+    pipe = redis_client.pipeline(transaction=False)
+    pipe.hset(redis_key, mapping = data_to_save)
+    pipe.expire(redis_key, IMAGE_EXPIRY)
+    pipe.execute()
 
-  # Optional - do something with the metadata if you want to.
-  print(image_metadata)
+    print(f"Stored new image at {redis_key}")
 
-  time.sleep(IMAGE_CAPTURE_FREQUENCY)
+    # Optional - do something with the metadata if you want to.
+    print(image_metadata)
+
+    time.sleep(IMAGE_CAPTURE_FREQUENCY)
 
 # This code is unreachable but shows how to release the Redis client
 # connection nicely should we want to say just take some pictures then
