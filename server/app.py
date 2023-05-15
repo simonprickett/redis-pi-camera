@@ -9,9 +9,11 @@ IMAGE_KEY_PREFIX = "image"
 IMAGE_DATA_FIELD_NAME = "image_data"
 IMAGE_MIME_TYPE_FIELD_NAME = "mime_type"
 IMAGE_TIMESTAMP_FIELD_NAME = "timestamp"
+IMAGE_LUX_FIELD_NAME = "lux"
 IMAGE_META_DATA_FIELDS = [
     IMAGE_TIMESTAMP_FIELD_NAME,
-    IMAGE_MIME_TYPE_FIELD_NAME
+    IMAGE_MIME_TYPE_FIELD_NAME,
+    IMAGE_LUX_FIELD_NAME
     # Anything else that is captured on the Pi can go here.
 ]
 
@@ -69,6 +71,7 @@ def get_image_data(image_id):
     data_dict = dict()
     data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode(STRING_ENCODING)
     data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode(STRING_ENCODING)
+    data_dict[IMAGE_LUX_FIELD_NAME] = image_meta_data[2].decode(STRING_ENCODING)
     return data_dict
 
 @app.route("/")
