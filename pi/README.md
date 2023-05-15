@@ -8,9 +8,9 @@ This folder contains the Python code for the image capture component of this pro
 
 Every 10 or so seconds, the code takes a new picture in JPEG format and stores it in a Redis Hash along with some basic metadata.  The key name for each hash is `image:<unix time stamp when image was captured>`.
 
-I've tested this on a [Raspberry Pi 3B](https://www.raspberrypi.com/products/raspberry-pi-3-model-b/) using the [Raspberry Pi Camera Module v2.1](https://www.raspberrypi.com/products/camera-module-v2/).  Other models of Raspberry Pi that have the camera connector ([3A+](https://www.raspberrypi.com/products/raspberry-pi-3-model-a-plus/), [3B+](https://www.raspberrypi.com/products/raspberry-pi-3-model-b-plus/), [4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) etc) should work too.
+I've tested this on a [Raspberry Pi 3B](https://www.raspberrypi.com/products/raspberry-pi-3-model-b/) using both the [Raspberry Pi Camera Module v2.1](https://www.raspberrypi.com/products/camera-module-v2/) and [Raspberry Pi Camera Module v3](https://www.raspberrypi.com/products/camera-module-3/).  Other models of Raspberry Pi that have the camera connector ([3A+](https://www.raspberrypi.com/products/raspberry-pi-3-model-a-plus/), [3B+](https://www.raspberrypi.com/products/raspberry-pi-3-model-b-plus/), [4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) etc) should work too.
 
-I haven't tested with the [Raspberry Pi Camera Module v3](https://www.raspberrypi.com/products/camera-module-3/) or the [High Quality Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/).  I would imagine that the v3 is a good choice for this project as it has auto focus.  The pictures from my v2.1 camera can be blurry as there's no auto focus.
+I haven't tested with the [High Quality Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/).  Of the cheaper models, the v3 is a good choice for this project as it has auto focus and higher resolution than the v2.1 and is easy to find online at a reasonable prive.  The pictures from my v2.1 camera can be blurry as there's no auto focus.
 
 **Note:** As Redis keeps a copy of all the data in memory, you should bear in mind that an 8Mb image file will require at least 8Mb of RAM on the Redis server.  As it stands, the code doesn't expire pictures from Redis after a period of time, but you could easily add this using a call to the [`EXPIRE`](https://redis.io/commands/expire/) command whenever you add a new image Hash.
 
@@ -28,6 +28,8 @@ picam2.configure(camera_config)
 ...
 picam2.start()
 ```
+
+TODO explain autofocus!
 
 Use the `Picamera2` documentation to adjust the camera configuration in `camera_config` e.g. to capture lower resolution pictures.  This configuration assumes we are running on a headless Raspberry Pi so there's no preview window required.
 
@@ -64,6 +66,8 @@ data_to_save["timestamp"] = current_timestamp
 data_to_save["mime_type"] = "image/jpeg"
 ```
 
+TODO add Lux
+
 First, we create the key name we're going to use when storing the Hash.  It's `image:<timestamp>`.
 
 `data_to_save` is a Python dictionary containing the name/value pairs to store in the Redis Hash. This needs to be a flat map of name/value pairs - nested structure isn't allowed in a Redis Hash.  If you want more complex data structure, use the [Redis JSON data type](https://redis.io/docs/stack/json/) in Redis Stack.
@@ -87,6 +91,8 @@ redis_client.expire(redis_key, 3600) # 60 secs = 1 min x 60 = 1hr
 
 Redis also has an [EXPIREAT command](https://redis.io/commands/expireat/) if you prefer to specify a time and date for expiry, rather than a number of seconds in the future.
 
+TODO update the above for pipelining and expiry and the lux information.
+
 ## Setup
 
 To get this component working, you'll need to connect your camera to the Raspberry Pi, ensure the operating system is configured correctly for it and install some Python dependencies (to connect to Redis).
@@ -109,7 +115,7 @@ Linux 6.1.21-v7+ #1642 SMP Mon Apr  3 17:20:52 BST 2023 armv7l
 
 ### Camera Setup 
 
-Setting up the camera may require some changes to the operating system configuration of the Raspberry Pi.  This is what worked for me on the Raspberry Pi 3B using the Camera Module v2.1.  
+Setting up the camera may require some changes to the operating system configuration of the Raspberry Pi.  This is what worked for me on the Raspberry Pi 3B using either the Camera Module v2.1 or v3 (recommended).  
 
 First, connect the camera to the Raspberry Pi with the ribbon cable provided. If you are unsure how to do this, follow Raspberry Pi's [instructions here](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2).
 
@@ -122,13 +128,13 @@ max_framebuffers=10
 dtoverlay=imx219
 ```
 
-The `imx219` value may differ for your camera.  I was using the Raspberry Pi Camera Module v2.1.  If you are using something different, you'll need to research appropriate values for your camera.
+The `imx219` value may differ for your camera.  Use `imx219` for the Raspberry Pi Camera Module v2.1, or `imx708` for the v3.  If you are using something different, you'll need to research appropriate values for your camera.  Raspberry Pi provide this information in their [camera documentation](https://www.raspberrypi.com/documentation/accessories/camera.html#preparing-the-software).
 
-If you made any changes, save them and reboot the Raspberry Pi.
+If you made any changes, save them and **reboot the Raspberry Pi** (`sudo reboot`).
 
 ### Python Setup
 
-You need Python 3.7 or higher (I've tested this with Python 3.9.2.  To check your Python version:
+You need Python 3.7 or higher (I've tested this with Python 3.9.2).  To check your Python version:
 
 ```
 python3 --version
@@ -177,6 +183,8 @@ export REDIS_URL=redis://myhost:9999/
 ```
 
 Be sure to configure both the capture script and the separate server component to talk to the same Redis instance!
+
+TODO `IMAGE_CAPTURE_FREQUENCY` and `IMAGE_EXPIRY` and `CAMERA_AUTOFOCUS` environment variables...
 
 Alternatively, you can create a file in the `server` folder called `.env` and store your environment variable values there.  See `env.example` for an example.  Don't commit `.env` to source control, as your Redis credentials should be considered a secret and managed as such!
 

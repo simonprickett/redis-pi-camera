@@ -106,6 +106,8 @@ IMAGE_META_DATA_FIELDS = [
 ]
 ...
 
+TODO Add lux
+
 @app.route(f"/{API_ROUTE_PREFIX}/data/<image_id>")
 def get_image_data(image_id):
     # Look for the image meta data in Redis.
@@ -127,6 +129,8 @@ data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode(STRING_ENCODIN
 data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode(STRING_ENCODING)
 return data_dict
 ```
+
+TODO add lux...
 
 This could also probably be done more dynamically with less hard coding of field names, but it works for this demo!
 
