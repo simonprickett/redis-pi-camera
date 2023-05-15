@@ -32,6 +32,8 @@ picam2.start()
 # an image every so many seconds...
 
 while True:
+  # For the Camera Module 3, trigger an autofocus cycle.
+  picam2.autofocus_cycle()
   image_data = io.BytesIO()
 
   # Take a picture and grab the metadata at the same time.
