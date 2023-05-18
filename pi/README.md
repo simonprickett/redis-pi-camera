@@ -29,7 +29,12 @@ picam2.configure(camera_config)
 picam2.start()
 ```
 
-TODO explain autofocus!
+The v3 camera module has autofocus capabilities.  These are enabled like so, and only if an environment variable is set to do so (see later for details):
+
+```python
+if CAMERA_AUTOFOCUS == True:
+    picam2.set_controls({"AfMode": controls.AfModeEnum.Continuous})
+```
 
 Use the `Picamera2` documentation to adjust the camera configuration in `camera_config` e.g. to capture lower resolution pictures.  This configuration assumes we are running on a headless Raspberry Pi so there's no preview window required.
 
@@ -40,6 +45,15 @@ redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 ```
 
 The code then enters an infinite loop, in which is captures an image plus some metadata from the camera, stores it in Redis and sleeps for 10 seconds before doing it all again.
+
+If the camera module has autofocus, and it is enabled... we start an autofocus cycle to make sure that the camera's focus is in the right place:
+
+```python
+if CAMERA_AUTOFOCUS == True:
+    picam2.autofocus_cycle()
+```
+
+This is synchronous, so may take a short amount of time to complete.
 
 We want to capture the image into a file like structure in memory, rather than write it to the filesystem.  We use an [in memory binary stream](https://docs.python.org/3/library/io.html#binary-i-o) declared like this:
 
