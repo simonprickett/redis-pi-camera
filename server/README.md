@@ -101,12 +101,11 @@ IMAGE_MIME_TYPE_FIELD_NAME = "mime_type"
 IMAGE_TIMESTAMP_FIELD_NAME = "timestamp"
 IMAGE_META_DATA_FIELDS = [
     IMAGE_TIMESTAMP_FIELD_NAME,
-    IMAGE_MIME_TYPE_FIELD_NAME
+    IMAGE_MIME_TYPE_FIELD_NAME,
+    IMAGE_LUX_FIELD_NAME
     # Anything else that is captured on the Pi can go here.
 ]
 ...
-
-TODO Add lux
 
 @app.route(f"/{API_ROUTE_PREFIX}/data/<image_id>")
 def get_image_data(image_id):
@@ -127,10 +126,9 @@ If we did get data, we convert it to a Python dictionary, decoding the String va
 data_dict = dict()
 data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode(STRING_ENCODING)
 data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode(STRING_ENCODING)
+data_dict[IMAGE_LUX_FIELD_NAME] = image_meta_data[2].decode(STRING_ENCODING)
 return data_dict
 ```
-
-TODO add lux...
 
 This could also probably be done more dynamically with less hard coding of field names, but it works for this demo!
 
@@ -206,7 +204,7 @@ With the value in `imageUrl` and metadata values in `imageData`, we can then use
 const imageHTML = `
   <div class="card m-4">
     <div class="card-image">
-      <figure class="image is-4by3">
+      <figure class="image is-16by9">
         <img src="${imageUrl}" alt="Image ${imageId}">
       </figure>
     </div>
