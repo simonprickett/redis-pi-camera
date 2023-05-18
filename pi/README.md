@@ -6,13 +6,13 @@
 
 This folder contains the Python code for the image capture component of this project.  It runs on a Raspberry Pi with a Raspberry Pi Camera Module attached.
 
-Every 10 or so seconds, the code takes a new picture in JPEG format and stores it in a Redis Hash along with some basic metadata.  The key name for each hash is `image:<unix time stamp when image was captured>`.
+Every so many seconds (configurable), the code takes a new picture in JPEG format and stores it in a Redis Hash along with some basic metadata.  The key name for each hash is `image:<unix time stamp when image was captured>`.
 
-I've tested this on a [Raspberry Pi 3B](https://www.raspberrypi.com/products/raspberry-pi-3-model-b/) using the [Raspberry Pi Camera Module v2.1](https://www.raspberrypi.com/products/camera-module-v2/).  Other models of Raspberry Pi that have the camera connector ([3A+](https://www.raspberrypi.com/products/raspberry-pi-3-model-a-plus/), [3B+](https://www.raspberrypi.com/products/raspberry-pi-3-model-b-plus/), [4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) etc) should work too.
+I've tested this on a [Raspberry Pi 3B](https://www.raspberrypi.com/products/raspberry-pi-3-model-b/) using both the [Raspberry Pi Camera Module v2.1](https://www.raspberrypi.com/products/camera-module-v2/) and [Raspberry Pi Camera Module v3](https://www.raspberrypi.com/products/camera-module-3/).  Other models of Raspberry Pi that have the camera connector ([3A+](https://www.raspberrypi.com/products/raspberry-pi-3-model-a-plus/), [3B+](https://www.raspberrypi.com/products/raspberry-pi-3-model-b-plus/), [4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) etc) should work too.
 
-I haven't tested with the [Raspberry Pi Camera Module v3](https://www.raspberrypi.com/products/camera-module-3/) or the [High Quality Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/).  I would imagine that the v3 is a good choice for this project as it has auto focus.  The pictures from my v2.1 camera can be blurry as there's no auto focus.
+I haven't tested with the [High Quality Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/).  Of the cheaper models, the v3 is a good choice for this project as it has auto focus and higher resolution than the v2.1 and is easy to find online at a reasonable price.  The pictures from my v2.1 camera can be blurry as there's no auto focus.
 
-**Note:** As Redis keeps a copy of all the data in memory, you should bear in mind that an 8Mb image file will require at least 8Mb of RAM on the Redis server.  As it stands, the code doesn't expire pictures from Redis after a period of time, but you could easily add this using a call to the [`EXPIRE`](https://redis.io/commands/expire/) command whenever you add a new image Hash.
+**Note:** As Redis keeps a copy of all the data in memory, you should bear in mind that an 8Mb image file will require at least 8Mb of RAM on the Redis server.  To help manage the amount of memory used, this project automatically expires the image data from Redis after a configurable amount of time (see later for details).
 
 ## How it Works
 
@@ -29,6 +29,13 @@ picam2.configure(camera_config)
 picam2.start()
 ```
 
+The v3 camera module has autofocus capabilities.  These are enabled like so, and only if an environment variable is set to do so (see later for details):
+
+```python
+if CAMERA_AUTOFOCUS == True:
+    picam2.set_controls({"AfMode": controls.AfModeEnum.Continuous})
+```
+
 Use the `Picamera2` documentation to adjust the camera configuration in `camera_config` e.g. to capture lower resolution pictures.  This configuration assumes we are running on a headless Raspberry Pi so there's no preview window required.
 
 Next, a connection to Redis is established, using the value of an environment variable:
@@ -37,7 +44,16 @@ Next, a connection to Redis is established, using the value of an environment va
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 ```
 
-The code then enters an infinite loop, in which is captures an image plus some metadata from the camera, stores it in Redis and sleeps for 10 seconds before doing it all again.
+The code then enters an infinite loop, in which is captures an image plus some metadata from the camera, stores it in Redis and sleeps for a configurable number of seconds before doing it all again.
+
+If the camera module has autofocus and it is enabled... we start an autofocus cycle to make sure that the camera's focus is in the right place:
+
+```python
+if CAMERA_AUTOFOCUS == True:
+    picam2.autofocus_cycle()
+```
+
+This is synchronous, so may take a short amount of time to complete.
 
 We want to capture the image into a file like structure in memory, rather than write it to the filesystem.  We use an [in memory binary stream](https://docs.python.org/3/library/io.html#binary-i-o) declared like this:
 
@@ -54,7 +70,7 @@ current_timestamp = int(time.time())
 
 The return value of `picam2.capture_file` is some metadata from the camera.  This isn't currently stored in Redis, but is printed out so you can determine if any of it is useful to you.  See later in this file for an example.
 
-Now it's time to create a Hash in Redis and store our image plus a couple of other pieces of data there:
+Now it's time to create a Hash in Redis and store our image plus a couple of other pieces of data there, including the Lux value from the metadata:
 
 ```python
 redis_key = f"image:{current_timestamp}"
@@ -62,6 +78,7 @@ data_to_save = dict()
 data_to_save["image_data"] = image_data.getvalue()
 data_to_save["timestamp"] = current_timestamp
 data_to_save["mime_type"] = "image/jpeg"
+data_to_save["lux"] = int(image_metadata["Lux"])
 ```
 
 First, we create the key name we're going to use when storing the Hash.  It's `image:<timestamp>`.
@@ -72,20 +89,18 @@ Hashes in Redis are schemaless, so if you add extra fields there's no need to ch
 
 We store the bytes of the image, the timestamp and the MIME or media type of the image... so that any front end knows what encoding the data in `image_data` is in.
 
-Saving the Hash to Redis is then simply a matter of running the [`HSET` command](https://redis.io/commands/hset/), passing it the key name and dict of name/value pairs to store:
+Saving the Hash to Redis is then simply a matter of running the [`HSET` command](https://redis.io/commands/hset/), passing it the key name and dict of name/value pairs to store.  When saving this fata, we also want to set an expiry time for it which we do with the Redis [`EXPIRE` command](https://redis.io/commands/expire/).  The time to live for each hash is a configurable number of seconds, read from the `IMAGE_EXPIRY` environment variable (see later for details).
+
+This means that we want to send two commands to Redis.  To save on network bandwidth, let's use a feature of the Redis protocol called a [pipeline](https://redis.io/docs/manual/pipelining/) and send both in the same network round trip:
 
 ```python
-redis_client.hset(redis_key, mapping = data_to_save)
+pipe = redis_client.pipeline(transaction=False)
+pipe.hset(redis_key, mapping = data_to_save)
+pipe.expire(redis_key, IMAGE_EXPIRY)
+pipe.execute()
 ```
 
-As it stands, the images will stay in Redis until manually deleted.  If you want to set a time to live on the image, use the [EXPIRE command](https://redis.io/commands/expire/).  Redis will consider the Hash deleted after the number of seconds you specify has passed, freeing up resources associated with it on the Redis server.  To implement this with a 1hr expiry time, modify the code as follows:
-
-```python
-redis_client.hset(redis_key, mapping = data_to_save)
-redis_client.expire(redis_key, 3600) # 60 secs = 1 min x 60 = 1hr
-```
-
-Redis also has an [EXPIREAT command](https://redis.io/commands/expireat/) if you prefer to specify a time and date for expiry, rather than a number of seconds in the future.
+This sets up the `HSET` and `EXPIRE` commands in a pipeline, which is then sent to Redis using the `execute` function.
 
 ## Setup
 
@@ -109,7 +124,7 @@ Linux 6.1.21-v7+ #1642 SMP Mon Apr  3 17:20:52 BST 2023 armv7l
 
 ### Camera Setup 
 
-Setting up the camera may require some changes to the operating system configuration of the Raspberry Pi.  This is what worked for me on the Raspberry Pi 3B using the Camera Module v2.1.  
+Setting up the camera may require some changes to the operating system configuration of the Raspberry Pi.  This is what worked for me on the Raspberry Pi 3B using either the Camera Module v2.1 or v3 (recommended).  
 
 First, connect the camera to the Raspberry Pi with the ribbon cable provided. If you are unsure how to do this, follow Raspberry Pi's [instructions here](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2).
 
@@ -122,13 +137,13 @@ max_framebuffers=10
 dtoverlay=imx219
 ```
 
-The `imx219` value may differ for your camera.  I was using the Raspberry Pi Camera Module v2.1.  If you are using something different, you'll need to research appropriate values for your camera.
+The `imx219` value may differ for your camera.  Use `imx219` for the Raspberry Pi Camera Module v2.1, or `imx708` for the v3.  If you are using something different, you'll need to research appropriate values for your camera.  Raspberry Pi provide this information in their [camera documentation](https://www.raspberrypi.com/documentation/accessories/camera.html#preparing-the-software).
 
-If you made any changes, save them and reboot the Raspberry Pi.
+If you made any changes, save them and **reboot the Raspberry Pi** (`sudo reboot`).
 
 ### Python Setup
 
-You need Python 3.7 or higher (I've tested this with Python 3.9.2.  To check your Python version:
+You need Python 3.7 or higher (I've tested this with Python 3.9.2).  To check your Python version:
 
 ```
 python3 --version
@@ -178,7 +193,13 @@ export REDIS_URL=redis://myhost:9999/
 
 Be sure to configure both the capture script and the separate server component to talk to the same Redis instance!
 
-Alternatively, you can create a file in the `server` folder called `.env` and store your environment variable values there.  See `env.example` for an example.  Don't commit `.env` to source control, as your Redis credentials should be considered a secret and managed as such!
+You'll also need to set the following environment variables:
+
+* `IMAGE_CAPTURE_FREQUENCY` - set this to the number of seconds that you want the code to wait between capturing images, e.g. `30`.
+* `IMAGE_EXPIRY` - set this to the number of seconds that you want the image data to be stored in Redis for before it is expired e.g. `300` for 5 minutes.
+* `CAMERA_AUTOFOCUS` - set this to `1` if your camera module has autofocus (v3) or `0` if it doesn't (v2).
+
+Alternatively (recommended), you can create a file in the `server` folder called `.env` and store your environment variable values there.  See `env.example` for an example.  Don't commit `.env` to source control, as your Redis credentials should be considered a secret and managed as such!
 
 ### Running the Capture Script
 
@@ -188,7 +209,7 @@ With the setup steps completed, start the capture script as follows:
 python3 capture.py
 ```
 
-You should expect to see output similar to the following on startup:
+You should expect to see output similar to the following on startup (example using camera module v2.1):
 
 ```
 [0:34:17.749739445] [847]  INFO Camera camera_manager.cpp:299 libcamera v0.0.4+22-923f5d70
@@ -204,13 +225,13 @@ Your output may differ if you are using a different camera.  It appears that thi
 WARN RPI raspberrypi.cpp:1357 Mismatch between Unicam and CamHelper for embedded data usage!
 ```
 
-Every 10 seconds or so, the script will capture a new image. Expect to see output similar to the following:
+Every so many seconds, the script will capture a new image. Expect to see output similar to the following:
 
 ```
 Stored new image at image:1681923128
 {'SensorTimestamp': 2058296354000, 'ScalerCrop': (0, 0, 3280, 2464), 'DigitalGain': 1.1096521615982056, 'ColourGains': (1.1879777908325195, 2.4338300228118896), 'SensorBlackLevels': (4096, 4096, 4096, 4096), 'AeLocked': False, 'Lux': 85.72087097167969, 'FrameDuration': 59489, 'ColourCorrectionMatrix': (1.6235777139663696, -0.38433241844177246, -0.23924528062343597, -0.5687134861946106, 2.019625425338745, -0.45091837644577026, -0.09334515780210495, -1.2399080991744995, 2.3332533836364746), 'AnalogueGain': 4.0, 'ColourTemperature': 2874, 'ExposureTime': 59413}
 ```
 
-The camera metadata isn't stored in Redis, it's just output for informational purposes.  If any of it is considered useful enough to keep, it should be easy to modify `capture.py` to add it to the Redis Hash that stores the image and associated data.
+With the exception of the `Lux` value, he camera metadata isn't stored in Redis - it's just output for informational purposes.  If any of it is considered useful enough to keep, it should be easy to modify `capture.py` to add it to the Redis Hash that stores the image and associated data.
 
 To stop the script, press Ctrl-C.

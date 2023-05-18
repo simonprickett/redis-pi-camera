@@ -29,7 +29,7 @@ async function renderImages() {
     const imageHTML = `
       <div class="card m-4">
         <div class="card-image">
-          <figure class="image is-4by3">
+          <figure class="image is-16by9">
             <img src="${imageUrl}" alt="Image ${imageId}">
           </figure>
         </div>
