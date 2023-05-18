@@ -229,13 +229,13 @@ Your output may differ if you are using a different camera.  It appears that thi
 WARN RPI raspberrypi.cpp:1357 Mismatch between Unicam and CamHelper for embedded data usage!
 ```
 
-Every 10 seconds or so, the script will capture a new image. Expect to see output similar to the following:
+Every so many seconds, the script will capture a new image. Expect to see output similar to the following:
 
 ```
 Stored new image at image:1681923128
 {'SensorTimestamp': 2058296354000, 'ScalerCrop': (0, 0, 3280, 2464), 'DigitalGain': 1.1096521615982056, 'ColourGains': (1.1879777908325195, 2.4338300228118896), 'SensorBlackLevels': (4096, 4096, 4096, 4096), 'AeLocked': False, 'Lux': 85.72087097167969, 'FrameDuration': 59489, 'ColourCorrectionMatrix': (1.6235777139663696, -0.38433241844177246, -0.23924528062343597, -0.5687134861946106, 2.019625425338745, -0.45091837644577026, -0.09334515780210495, -1.2399080991744995, 2.3332533836364746), 'AnalogueGain': 4.0, 'ColourTemperature': 2874, 'ExposureTime': 59413}
 ```
 
-The camera metadata isn't stored in Redis, it's just output for informational purposes.  If any of it is considered useful enough to keep, it should be easy to modify `capture.py` to add it to the Redis Hash that stores the image and associated data.
+With the exception of the `Lux` value, he camera metadata isn't stored in Redis - it's just output for informational purposes.  If any of it is considered useful enough to keep, it should be easy to modify `capture.py` to add it to the Redis Hash that stores the image and associated data.
 
 To stop the script, press Ctrl-C.
