@@ -183,9 +183,13 @@ export REDIS_URL=redis://myhost:9999/
 
 Be sure to configure both the capture script and the separate server component to talk to the same Redis instance!
 
-TODO `IMAGE_CAPTURE_FREQUENCY` and `IMAGE_EXPIRY` and `CAMERA_AUTOFOCUS` environment variables...
+You'll also need to set the following environment variables:
 
-Alternatively, you can create a file in the `server` folder called `.env` and store your environment variable values there.  See `env.example` for an example.  Don't commit `.env` to source control, as your Redis credentials should be considered a secret and managed as such!
+* `IMAGE_CAPTURE_FREQUENCY` - set this to the number of seconds that you want the code to wait between capturing images, e.g. `30`.
+* `IMAGE_EXPIRY` - set this to the number of seconds that you want the image data to be stored in Redis for before it is expired e.g. `300` for 5 minutes.
+* `CAMERA_AUTOFOCUS` - set this to `1` if your camera module has autofocus (v3) or `0` if it doesn't (v2).
+
+Alternatively (recommended), you can create a file in the `server` folder called `.env` and store your environment variable values there.  See `env.example` for an example.  Don't commit `.env` to source control, as your Redis credentials should be considered a secret and managed as such!
 
 ### Running the Capture Script
 
