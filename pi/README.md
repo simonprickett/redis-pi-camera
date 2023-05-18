@@ -6,13 +6,13 @@
 
 This folder contains the Python code for the image capture component of this project.  It runs on a Raspberry Pi with a Raspberry Pi Camera Module attached.
 
-Every 10 or so seconds, the code takes a new picture in JPEG format and stores it in a Redis Hash along with some basic metadata.  The key name for each hash is `image:<unix time stamp when image was captured>`.
+Every so many seconds (configurable), the code takes a new picture in JPEG format and stores it in a Redis Hash along with some basic metadata.  The key name for each hash is `image:<unix time stamp when image was captured>`.
 
 I've tested this on a [Raspberry Pi 3B](https://www.raspberrypi.com/products/raspberry-pi-3-model-b/) using both the [Raspberry Pi Camera Module v2.1](https://www.raspberrypi.com/products/camera-module-v2/) and [Raspberry Pi Camera Module v3](https://www.raspberrypi.com/products/camera-module-3/).  Other models of Raspberry Pi that have the camera connector ([3A+](https://www.raspberrypi.com/products/raspberry-pi-3-model-a-plus/), [3B+](https://www.raspberrypi.com/products/raspberry-pi-3-model-b-plus/), [4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) etc) should work too.
 
-I haven't tested with the [High Quality Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/).  Of the cheaper models, the v3 is a good choice for this project as it has auto focus and higher resolution than the v2.1 and is easy to find online at a reasonable prive.  The pictures from my v2.1 camera can be blurry as there's no auto focus.
+I haven't tested with the [High Quality Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/).  Of the cheaper models, the v3 is a good choice for this project as it has auto focus and higher resolution than the v2.1 and is easy to find online at a reasonable price.  The pictures from my v2.1 camera can be blurry as there's no auto focus.
 
-**Note:** As Redis keeps a copy of all the data in memory, you should bear in mind that an 8Mb image file will require at least 8Mb of RAM on the Redis server.  As it stands, the code doesn't expire pictures from Redis after a period of time, but you could easily add this using a call to the [`EXPIRE`](https://redis.io/commands/expire/) command whenever you add a new image Hash.
+**Note:** As Redis keeps a copy of all the data in memory, you should bear in mind that an 8Mb image file will require at least 8Mb of RAM on the Redis server.  To help manage the amount of memory used, this project automatically expires the image data from Redis after a configurable amount of time (see later for details).
 
 ## How it Works
 
@@ -44,9 +44,9 @@ Next, a connection to Redis is established, using the value of an environment va
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 ```
 
-The code then enters an infinite loop, in which is captures an image plus some metadata from the camera, stores it in Redis and sleeps for 10 seconds before doing it all again.
+The code then enters an infinite loop, in which is captures an image plus some metadata from the camera, stores it in Redis and sleeps for a configurable number of seconds before doing it all again.
 
-If the camera module has autofocus, and it is enabled... we start an autofocus cycle to make sure that the camera's focus is in the right place:
+If the camera module has autofocus and it is enabled... we start an autofocus cycle to make sure that the camera's focus is in the right place:
 
 ```python
 if CAMERA_AUTOFOCUS == True:
@@ -70,7 +70,7 @@ current_timestamp = int(time.time())
 
 The return value of `picam2.capture_file` is some metadata from the camera.  This isn't currently stored in Redis, but is printed out so you can determine if any of it is useful to you.  See later in this file for an example.
 
-Now it's time to create a Hash in Redis and store our image plus a couple of other pieces of data there, including the Lux value:
+Now it's time to create a Hash in Redis and store our image plus a couple of other pieces of data there, including the Lux value from the metadata:
 
 ```python
 redis_key = f"image:{current_timestamp}"
@@ -104,7 +104,7 @@ redis_client.expire(redis_key, 3600) # 60 secs = 1 min x 60 = 1hr
 
 Redis also has an [EXPIREAT command](https://redis.io/commands/expireat/) if you prefer to specify a time and date for expiry, rather than a number of seconds in the future.
 
-TODO update the above for pipelining and expiry and the lux information.
+TODO update the above for pipelining and expiry.
 
 ## Setup
 
