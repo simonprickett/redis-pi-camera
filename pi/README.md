@@ -213,7 +213,7 @@ With the setup steps completed, start the capture script as follows:
 python3 capture.py
 ```
 
-You should expect to see output similar to the following on startup:
+You should expect to see output similar to the following on startup (example using camera module v2.1):
 
 ```
 [0:34:17.749739445] [847]  INFO Camera camera_manager.cpp:299 libcamera v0.0.4+22-923f5d70
