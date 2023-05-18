@@ -89,22 +89,18 @@ Hashes in Redis are schemaless, so if you add extra fields there's no need to ch
 
 We store the bytes of the image, the timestamp and the MIME or media type of the image... so that any front end knows what encoding the data in `image_data` is in.
 
-Saving the Hash to Redis is then simply a matter of running the [`HSET` command](https://redis.io/commands/hset/), passing it the key name and dict of name/value pairs to store:
+Saving the Hash to Redis is then simply a matter of running the [`HSET` command](https://redis.io/commands/hset/), passing it the key name and dict of name/value pairs to store.  When saving this fata, we also want to set an expiry time for it which we do with the Redis [`EXPIRE` command](https://redis.io/commands/expire/).  The time to live for each hash is a configurable number of seconds, read from the `IMAGE_EXPIRY` environment variable (see later for details).
+
+This means that we want to send two commands to Redis.  To save on network bandwidth, let's use a feature of the Redis protocol called a [pipeline](https://redis.io/docs/manual/pipelining/) and send both in the same network round trip:
 
 ```python
-redis_client.hset(redis_key, mapping = data_to_save)
+pipe = redis_client.pipeline(transaction=False)
+pipe.hset(redis_key, mapping = data_to_save)
+pipe.expire(redis_key, IMAGE_EXPIRY)
+pipe.execute()
 ```
 
-As it stands, the images will stay in Redis until manually deleted.  If you want to set a time to live on the image, use the [EXPIRE command](https://redis.io/commands/expire/).  Redis will consider the Hash deleted after the number of seconds you specify has passed, freeing up resources associated with it on the Redis server.  To implement this with a 1hr expiry time, modify the code as follows:
-
-```python
-redis_client.hset(redis_key, mapping = data_to_save)
-redis_client.expire(redis_key, 3600) # 60 secs = 1 min x 60 = 1hr
-```
-
-Redis also has an [EXPIREAT command](https://redis.io/commands/expireat/) if you prefer to specify a time and date for expiry, rather than a number of seconds in the future.
-
-TODO update the above for pipelining and expiry.
+This sets up the `HSET` and `EXPIRE` commands in a pipeline, which is then sent to Redis using the `execute` function.
 
 ## Setup
 
