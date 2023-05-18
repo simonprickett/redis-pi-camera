@@ -56,7 +56,7 @@ current_timestamp = int(time.time())
 
 The return value of `picam2.capture_file` is some metadata from the camera.  This isn't currently stored in Redis, but is printed out so you can determine if any of it is useful to you.  See later in this file for an example.
 
-Now it's time to create a Hash in Redis and store our image plus a couple of other pieces of data there:
+Now it's time to create a Hash in Redis and store our image plus a couple of other pieces of data there, including the Lux value:
 
 ```python
 redis_key = f"image:{current_timestamp}"
@@ -64,9 +64,8 @@ data_to_save = dict()
 data_to_save["image_data"] = image_data.getvalue()
 data_to_save["timestamp"] = current_timestamp
 data_to_save["mime_type"] = "image/jpeg"
+data_to_save["lux"] = int(image_metadata["Lux"])
 ```
-
-TODO add Lux
 
 First, we create the key name we're going to use when storing the Hash.  It's `image:<timestamp>`.
 
