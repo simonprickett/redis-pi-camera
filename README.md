@@ -85,6 +85,59 @@ Here's a complete example, with the image data truncated for brevity:
 ```
 With the camera that I used ([Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) capturing at 4608x2592 pixels - configurable in `capture.py`) you can expect each Hash to require around 1Mb of RAM in Redis.
 
+TODO index creation information...
+
+```
+FT.CREATE idx:images ON HASH PREFIX 1 image: SCHEMA mime_type TAG lux NUMERIC SORTABLE timestamp NUMERIC SORTABLE
+```
+
+TODO find the 9 most recent images, returning their timestamp, MIME type and lux values:
+
+```
+FT.SEARCH idx:images "*" RETURN 3 timestamp mime_type lux SORTBY timestamp DESC LIMIT 0 9
+```
+
+Example response:
+
+```
+1) "12"
+2) "image:1684427475"
+3) 1) "timestamp"
+   2) "1684427475"
+   3) "mime_type"
+   4) "image/jpeg"
+   5) "lux"
+   6) "85"
+4) "image:1684427251"
+5) 1) "timestamp"
+   2) "1684427251"
+   3) "mime_type"
+   4) "image/jpeg"
+   5) "lux"
+   6) "104"
+6) "image:1684427190"
+7) 1) "timestamp"
+   2) "1684427190"
+   3) "mime_type"
+   4) "image/jpeg"
+   5) "lux"
+   6) "109"
+8) "image:1684427130"
+9) 1) "timestamp"
+   2) "1684427130"
+   3) "mime_type"
+   4) "image/jpeg"
+   5) "lux"
+   6) "93"
+...
+```
+
+Find up to 9 most recent images with lux value between 100 and 120:
+
+```
+FT.SEARCH idx:images "@lux:[100 120]" RETURN 3 timestamp mime_type lux SORTBY timestamp DESC LIMIT 0 9
+```
+
 ## (Optional, but Recommended): RedisInsight
 
 RedisInsight is a free graphical management and database browsing tool for Redis. You don't need it to look at how the application stores data in Redis (you can use redis-cli if you prefer) but I'd recommend it as it's much easier to get an overall picture of the state of the database with a graphical tool.  RedisInsight runs as a desktop application on your Mac, Windows or Linux machine.
