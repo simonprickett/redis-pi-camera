@@ -12,9 +12,11 @@ And here's a Raspberry Pi with a camera attached:
 
 ![Raspberry Pi 3 with Camera Module attached](raspberry_pi_3_with_camera_module.jpg)
 
-## Watch the Video
+## Watch the Videos
 
-Watch the video for a full walkthrough of this project.  [Watch on YouTube](https://www.youtube.com/watch?v=OTDZIK55DX0).
+Watch the first video for a full walkthrough of this project.  [Watch on YouTube](https://www.youtube.com/watch?v=OTDZIK55DX0).
+
+In the second episode I started to use Redis Stack's Search capability.  [Watch on YouTube](https://www.youtube.com/watch?v=mcGL6Lk2IXU).
 
 ## Components of the Demo
 
