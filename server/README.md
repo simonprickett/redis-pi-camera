@@ -6,9 +6,9 @@
 
 ## Overview
 
-This is a very basic "viewer" type front end that shows all of the images in the Redis database along with their metadata.
+This is currently a very basic "viewer" type front end that shows the 9 most recently captureed images in the Redis database along with their metadata.
 
-It isn't built with performance or scale in mind - a better implementation would use some sort of lazy loading and pagination strategy.
+In future updates, I aim to add some sort of filtering and pagination or lazy load functionality.
 
 The server is built using Python and the [Flask framework](https://flask.palletsprojects.com/).  The front end web application is a single web page, styled with [Bulma](https://bulma.io/) and using vanilla ES6 JavaScript with no JavaScript framework complexity / bloat.
 
@@ -63,74 +63,36 @@ def home():
 
 #### Getting a List of Available Images
 
-We need an API type route that returns a JSON array containing the IDs of all of the images in Redis.  This basically means we want the timestamp part of every key in Redis that begins with `image:`.
+We need an API type route that returns a JSON array containing the details of all of the images in Redis.  Each entry in this array will be a JSON object containing all of the meta data about the image.  We'll handle returning the actual bytes of the image data itself separately.  
 
-In this basic demonstration, I've used the Redis [`SCAN` command](https://redis.io/commands/scan/) to get these in a reasonably scalable manner for a simple demonstration.  To narrow down what's returned from the scan, I'm passing in a key prefix of `image:` and telling Redis I only want keys whose data type is `HASH`.
+As we have the data indexed using the Search capability of Redis Stack (see main [README](../README.md) for details), we can use the [`FT.SEARCH` command](https://redis.io/commands/ft.search/) to get the details of the 9 most recent images.
 
-The code works by iterating over the key names returned by `SCAN`, adding them to a list.  Before adding each key name, it's decoded to a UTF-8 string and the key prefix `image:` is removed as the front end doesn't need to know about this and it also saves a little network bandwidth between the Flask server and front end.
+`FT.SEARCH` returns a count of matching documents, followed by a list of `Document` objects.  We'll iterate over that, creating a dictionary for each with the values that we want and add them to a List to return.  Flask handles mapping this to JSON for us.
 
 ```python
 @app.route(f"/{API_ROUTE_PREFIX}/images")
 def get_all_images():
     all_images = []
-    # Scan the Redis keyspace for all keys whose name begins with IMAGE_KEY_PREFIX.
-    for img in redis_client.scan_iter(match=f"{IMAGE_KEY_PREFIX}:*", _type="HASH"):
-        # Return only the timestamp part of the Redis key.
-        all_images.append(img.decode(STRING_ENCODING).removeprefix(f"{IMAGE_KEY_PREFIX}:"))
 
-    # Most recent timestamp first...
-    all_images.sort(reverse=True)
+    # Run a search query to get the latest 9 images and return
+    # their data...
+    # ft.search idx:images "*" return 3 timestamp lux mime_type sortby timestamp desc limit 0 9
+    search_results = redis_client.ft(IMAGE_INDEX_NAME).search(Query("*").sort_by(IMAGE_TIMESTAMP_FIELD_NAME, False).paging(0, 9).return_fields(IMAGE_TIMESTAMP_FIELD_NAME, IMAGE_MIME_TYPE_FIELD_NAME, IMAGE_LUX_FIELD_NAME))
+
+    for doc in search_results.docs:
+        this_image = dict()
+        this_image[IMAGE_ID_FIELD_NAME] = doc.id.removeprefix(f"{IMAGE_KEY_PREFIX}:")
+        this_image[IMAGE_TIMESTAMP_FIELD_NAME] = doc.timestamp
+        this_image[IMAGE_MIME_TYPE_FIELD_NAME] = doc.mime_type
+        this_image[IMAGE_LUX_FIELD_NAME] = doc.lux
+        all_images.append(this_image)
+
     return all_images
 ```
 
-Before returning the data to the front end, it's sorted in reverse order, so that the most recent image timestamp is first.
+I'm removing the `image:` prefix from the `id` field sent to the front end, so that the front end (or other clients of this API) never see the full Redis key names.  This is sort of a guard against API clients trying to manipulate the data via the API.
 
-With a really big dataset, we'd want to do something better than this.  At minimum, we'd want to page through the dataset in multiple calls to this route.  We might also want to specify some search and ordering criteria based on metadata about each image held in Redis.  For that, the [Search capability of Redis Stack](https://redis.io/docs/stack/search/) would be a good approach and I may update this repository with that in future.
-
-#### Getting the Metadata for a Specific Image
-
-This route returns all of the metadata about a specific image from Redis.  That means every field in the image's Redis Hash except for the one holding the actual image data.
-
-One approach to getting all the fields except one would be to just get all of them with the [`HGETALL` command](https://redis.io/commands/hgetall/), then discard what we don't want in the Flask/Python layer.  As the field we don't want contains an entire image and could be several megabytes in size... this is wasteful and causes a lot of unnecessary work on the Redis server and data transfer bandwidth between the Redis server and Flask/Python application.
-
-There isn't an "all except" command or variant of `HGETALL`, so instead I'm using the [`HMGET command`](https://redis.io/commands/hmget/), passing it a list of every field in the hash except the image data one.  This isn't ideal, as if the capture script added more meta data in future I have to adjust the code here to read it and pass it to the front end, but it's what works!
-
-```python
-IMAGE_DATA_FIELD_NAME = "image_data"
-IMAGE_MIME_TYPE_FIELD_NAME = "mime_type"
-IMAGE_TIMESTAMP_FIELD_NAME = "timestamp"
-IMAGE_META_DATA_FIELDS = [
-    IMAGE_TIMESTAMP_FIELD_NAME,
-    IMAGE_MIME_TYPE_FIELD_NAME,
-    IMAGE_LUX_FIELD_NAME
-    # Anything else that is captured on the Pi can go here.
-]
-...
-
-@app.route(f"/{API_ROUTE_PREFIX}/data/<image_id>")
-def get_image_data(image_id):
-    # Look for the image meta data in Redis.
-    image_meta_data = redis_client.hmget(f"{IMAGE_KEY_PREFIX}:{image_id}", IMAGE_META_DATA_FIELDS)
-```
-
-If the image isn't found, we'll get nothing back and should return a 404 to the front end:
-
-```python
-if image_meta_data[0] is None:
-    return f"Image {image_id} not found.", 404
-```
-
-If we did get data, we convert it to a Python dictionary, decoding the String values to UTF-8 and returning the completed dictionary.  Flask will return this as a JSON object response to the front end:
-
-```python
-data_dict = dict()
-data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode(STRING_ENCODING)
-data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode(STRING_ENCODING)
-data_dict[IMAGE_LUX_FIELD_NAME] = image_meta_data[2].decode(STRING_ENCODING)
-return data_dict
-```
-
-This could also probably be done more dynamically with less hard coding of field names, but it works for this demo!
+In future, I'll update this route to take some pagination parameters (replacing the hard coded `.paging(0, 9)`).
 
 #### Getting the Binary Data for a Specific Image
 
@@ -185,17 +147,21 @@ If no images are returned, a notification is shown.  This is already in the HTML
   noImagesNotification.classList.remove('is-hidden');
 ```
 
-If the Flask server returned a JSON array of image IDs, we loop over it.  In each loop iteration, we get the ID (UNIX timestamp) of the image, and use that to request more information about that specific image from the Flask server:
+If the Flask server returned a JSON array of objects, we loop over it.  In each loop iteration, we get the ID and other properties of the image:
 
 ```javascript
-const imageDetailResponse = await fetch(`${API_PREFIX}/data/${imageId}`)
-const imageData = await imageDetailResponse.json();
+const imageResponse = await fetch(`/${API_PREFIX}/images`);
+const imageList = await imageResponse.json();
+
+for (const image of imageList) {
+  // Add markup for each image to the DOM...
+}
 ```
 
 Using the image ID (timestamp) we can also work out what URL we need to load the image from the Flask server:
 
 ```javascript
-const imageUrl = `/${API_PREFIX}/image/${imageId}`;
+const imageUrl = `/${API_PREFIX}/image/${image.id}`;
 ```
 
 With the value in `imageUrl` and metadata values in `imageData`, we can then use a template string and a HTML fragment to create the HTML we need to display this item on the page:
@@ -205,19 +171,19 @@ const imageHTML = `
   <div class="card m-4">
     <div class="card-image">
       <figure class="image is-16by9">
-        <img src="${imageUrl}" alt="Image ${imageId}">
+        <img src="${imageUrl}" alt="Image ${image.id}">
       </figure>
     </div>
     <div class="card-content">
       <div class="media">
         <div class="media-content">
-          <p class="title is-4">${new Date(parseInt(imageId * 1000, 10)).toUTCString()}</p>
+          <p class="title is-4">${new Date(parseInt(image.timestamp * 1000, 10)).toUTCString()}</p>
         </div>
       </div>
 
       <div class="content">
         <ul>
-          ${renderImageData(imageData)}
+          ${renderImageData(image)}
         </ul>
       </div>
     </div>
@@ -227,7 +193,7 @@ const imageHTML = `
 
 The two complexities worth looking at in the above are:
 
-1. I wanted to display the timestamp that the picture was taken in a meaningful format.  To do this, the timestamp gets multiplied by 1000 to make it a milliseconds timestamp.  Javacript has a `Date` constructor that accepts these, and the resulting `Date` object can be converted to a decent human readable date using `toUTCString`.  So the code to display the date is: `new Date(parseInt(imageId * 1000, 10)).toUTCString()`.
+1. I wanted to display the timestamp that the picture was taken in a meaningful format.  To do this, the timestamp gets multiplied by 1000 to make it a milliseconds timestamp.  Javacript has a `Date` constructor that accepts these, and the resulting `Date` object can be converted to a decent human readable date using `toUTCString`.  So the code to display the date is: `new Date(parseInt(image.timestamp * 1000, 10)).toUTCString()`.
 1. I also wanted to display all image metadata, without hard coding the names of the metadata fields.  This is so that the front end will just display anything passed to it, and adding more metadata in the capture script won't require code changes in the front end.  To do this, I created a utility function that takes an object containing name/value pairs and renders them out as a HTML list items:
 
 ```javascript

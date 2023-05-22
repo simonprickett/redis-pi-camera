@@ -11,9 +11,9 @@ async function renderImages() {
 
   const API_PREFIX = 'api';
   const imageResponse = await fetch(`/${API_PREFIX}/images`);
-  const imageIds = await imageResponse.json();
+  const imageList = await imageResponse.json();
 
-  if (imageIds.length === 0) {
+  if (imageList.length === 0) {
     // Unhide the notification
     const noImagesNotification = document.getElementById('noImagesNotification');
     noImagesNotification.classList.remove('is-hidden');
@@ -22,27 +22,25 @@ async function renderImages() {
 
   const imageArea = document.getElementById('imageArea');
 
-  for (const imageId of imageIds) {
-    const imageDetailResponse = await fetch(`${API_PREFIX}/data/${imageId}`)
-    const imageData = await imageDetailResponse.json();
-    const imageUrl = `/${API_PREFIX}/image/${imageId}`;
+  for (const image of imageList) {
+    const imageUrl = `/${API_PREFIX}/image/${image.id}`;
     const imageHTML = `
       <div class="card m-4">
         <div class="card-image">
           <figure class="image is-16by9">
-            <img src="${imageUrl}" alt="Image ${imageId}">
+            <img src="${imageUrl}" alt="Image ${image.id}">
           </figure>
         </div>
         <div class="card-content">
           <div class="media">
             <div class="media-content">
-              <p class="title is-4">${new Date(parseInt(imageId * 1000, 10)).toUTCString()}</p>
+              <p class="title is-4">${new Date(parseInt(image.timestamp * 1000, 10)).toUTCString()}</p>
             </div>
           </div>
     
           <div class="content">
             <ul>
-              ${renderImageData(imageData)}
+              ${renderImageData(image)}
             </ul>
           </div>
         </div>

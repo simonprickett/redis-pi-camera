@@ -3,9 +3,11 @@ from flask import Flask, render_template, send_file
 import io
 import os
 import redis
+from redis.commands.search.query import Query
 
 API_ROUTE_PREFIX = "api"
 IMAGE_KEY_PREFIX = "image"
+IMAGE_ID_FIELD_NAME = "id"
 IMAGE_DATA_FIELD_NAME = "image_data"
 IMAGE_MIME_TYPE_FIELD_NAME = "mime_type"
 IMAGE_TIMESTAMP_FIELD_NAME = "timestamp"
@@ -18,6 +20,8 @@ IMAGE_META_DATA_FIELDS = [
 ]
 
 STRING_ENCODING = "utf-8"
+
+IMAGE_INDEX_NAME = "idx:images"
 
 # Load environment variables from .env file.
 load_dotenv()
@@ -32,13 +36,20 @@ redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 @app.route(f"/{API_ROUTE_PREFIX}/images")
 def get_all_images():
     all_images = []
-    # Scan the Redis keyspace for all keys whose name begins with IMAGE_KEY_PREFIX.
-    for img in redis_client.scan_iter(match=f"{IMAGE_KEY_PREFIX}:*", _type="HASH"):
-        # Return only the timestamp part of the Redis key.
-        all_images.append(img.decode(STRING_ENCODING).removeprefix(f"{IMAGE_KEY_PREFIX}:"))
 
-    # Most recent timestamp first...
-    all_images.sort(reverse=True)
+    # Run a search query to get the latest 9 images and return
+    # their data...
+    # ft.search idx:images "*" return 3 timestamp lux mime_type sortby timestamp desc limit 0 9
+    search_results = redis_client.ft(IMAGE_INDEX_NAME).search(Query("*").sort_by(IMAGE_TIMESTAMP_FIELD_NAME, False).paging(0, 9).return_fields(IMAGE_TIMESTAMP_FIELD_NAME, IMAGE_MIME_TYPE_FIELD_NAME, IMAGE_LUX_FIELD_NAME))
+
+    for doc in search_results.docs:
+        this_image = dict()
+        this_image[IMAGE_ID_FIELD_NAME] = doc.id.removeprefix(f"{IMAGE_KEY_PREFIX}:")
+        this_image[IMAGE_TIMESTAMP_FIELD_NAME] = doc.timestamp
+        this_image[IMAGE_MIME_TYPE_FIELD_NAME] = doc.mime_type
+        this_image[IMAGE_LUX_FIELD_NAME] = doc.lux
+        all_images.append(this_image)
+
     return all_images
 
 # Retrieve an image from Redis.
@@ -58,21 +69,6 @@ def get_image(image_id):
 
     # Get the MIME type from the Redis response, and decode it from binary.
     return send_file(image_file, mimetype=image_data[1].decode(STRING_ENCODING))
-
-# Retrieve image meta data from Redis.
-@app.route(f"/{API_ROUTE_PREFIX}/data/<image_id>")
-def get_image_data(image_id):
-    # Look for the image meta data in Redis.
-    image_meta_data = redis_client.hmget(f"{IMAGE_KEY_PREFIX}:{image_id}", IMAGE_META_DATA_FIELDS)
-
-    if image_meta_data[0] is None:
-      return f"Image {image_id} not found.", 404
-    
-    data_dict = dict()
-    data_dict[IMAGE_TIMESTAMP_FIELD_NAME] = image_meta_data[0].decode(STRING_ENCODING)
-    data_dict[IMAGE_MIME_TYPE_FIELD_NAME] = image_meta_data[1].decode(STRING_ENCODING)
-    data_dict[IMAGE_LUX_FIELD_NAME] = image_meta_data[2].decode(STRING_ENCODING)
-    return data_dict
 
 @app.route("/")
 def home():
