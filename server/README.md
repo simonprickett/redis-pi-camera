@@ -80,12 +80,12 @@ def get_all_images():
     search_results = redis_client.ft(IMAGE_INDEX_NAME).search(Query("*").sort_by(IMAGE_TIMESTAMP_FIELD_NAME, False).paging(0, 9).return_fields(IMAGE_TIMESTAMP_FIELD_NAME, IMAGE_MIME_TYPE_FIELD_NAME, IMAGE_LUX_FIELD_NAME))
 
     for doc in search_results.docs:
-        all_images.append({
-            "id": doc.id.removeprefix(f"{IMAGE_KEY_PREFIX}:"),
-            "timestamp": doc.timestamp,
-            "mime_type": doc.mime_type,
-            "lux": doc.lux
-        })
+        this_image = dict()
+        this_image[IMAGE_ID_FIELD_NAME] = doc.id.removeprefix(f"{IMAGE_KEY_PREFIX}:")
+        this_image[IMAGE_TIMESTAMP_FIELD_NAME] = doc.timestamp
+        this_image[IMAGE_MIME_TYPE_FIELD_NAME] = doc.mime_type
+        this_image[IMAGE_LUX_FIELD_NAME] = doc.lux
+        all_images.append(this_image)
 
     return all_images
 ```
