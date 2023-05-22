@@ -83,13 +83,13 @@ data_to_save["lux"] = int(image_metadata["Lux"])
 
 First, we create the key name we're going to use when storing the Hash.  It's `image:<timestamp>`.
 
-`data_to_save` is a Python dictionary containing the name/value pairs to store in the Redis Hash. This needs to be a flat map of name/value pairs - nested structure isn't allowed in a Redis Hash.  If you want more complex data structure, use the [Redis JSON data type](https://redis.io/docs/stack/json/) in Redis Stack.
+`data_to_save` is a Python dictionary containing the name/value pairs to store in the Redis Hash. This needs to be a flat map of name/value pairs - nested structure isn't allowed in a Redis Hash.  If you want to model a more complex data structure, use the [JSON data type](https://redis.io/docs/stack/json/) in Redis Stack.
 
 Hashes in Redis are schemaless, so if you add extra fields there's no need to change any database schema (if you're looking for one, it doesn't exist!).  You'll just need to modify any application code that reads the Hashes to use new fields.
 
 We store the bytes of the image, the timestamp and the MIME or media type of the image... so that any front end knows what encoding the data in `image_data` is in.
 
-Saving the Hash to Redis is then simply a matter of running the [`HSET` command](https://redis.io/commands/hset/), passing it the key name and dict of name/value pairs to store.  When saving this fata, we also want to set an expiry time for it which we do with the Redis [`EXPIRE` command](https://redis.io/commands/expire/).  The time to live for each hash is a configurable number of seconds, read from the `IMAGE_EXPIRY` environment variable (see later for details).
+Saving the Hash to Redis is then simply a matter of running the [`HSET` command](https://redis.io/commands/hset/), passing it the key name and dict of name/value pairs to store.  When saving this data, we also want to set an expiry time for it which we do with the Redis [`EXPIRE` command](https://redis.io/commands/expire/).  The time to live for each Hash is a configurable number of seconds, read from the `IMAGE_EXPIRY` environment variable (see later for details).
 
 This means that we want to send two commands to Redis.  To save on network bandwidth, let's use a feature of the Redis protocol called a [pipeline](https://redis.io/docs/manual/pipelining/) and send both in the same network round trip:
 
@@ -100,7 +100,7 @@ pipe.expire(redis_key, IMAGE_EXPIRY)
 pipe.execute()
 ```
 
-This sets up the `HSET` and `EXPIRE` commands in a pipeline, which is then sent to Redis using the `execute` function.
+This sets up the `HSET` and `EXPIRE` commands in a pipeline, which is then sent to Redis using the `execute` function.  We don't need the results returned from Redis in this instance, but if we did then we can access them as a List returned by `execute`.
 
 ## Setup
 
