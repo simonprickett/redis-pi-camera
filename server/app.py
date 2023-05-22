@@ -39,7 +39,7 @@ def get_all_images():
     # Run a search query to get the latest 9 images and return
     # their data...
     # ft.search idx:images "*" return 3 timestamp lux mime_type sortby timestamp desc limit 0 9
-    search_results = redis_client.ft(IMAGE_INDEX_NAME).search(Query("*").sort_by("timestamp", False).paging(0, 9).return_fields("timestamp", "mime_type", "lux"))
+    search_results = redis_client.ft(IMAGE_INDEX_NAME).search(Query("*").sort_by(IMAGE_TIMESTAMP_FIELD_NAME, False).paging(0, 9).return_fields(IMAGE_TIMESTAMP_FIELD_NAME, IMAGE_MIME_TYPE_FIELD_NAME, IMAGE_LUX_FIELD_NAME))
 
     for doc in search_results.docs:
         all_images.append({
