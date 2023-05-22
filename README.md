@@ -4,11 +4,11 @@
 
 This repository contains an example application that demonstrates how to capture images from a Raspberry Pi using the camera module, store them in [Redis Hashes](https://redis.io/docs/data-types/hashes/) and render them in a web application.  
 
-The project started by using an older Raspberry Pi camera module and the Redis `SCAN` command to retrieve all of the data and present it in the front end.  [Release v0.1](https://github.com/simonprickett/redis-pi-camera/releases/tag/v0.0.1) has that code.
+The project started by using an older Raspberry Pi camera module and the Redis `SCAN` command to retrieve all of the data and present it in the front end.  [Release v0.0.1](https://github.com/simonprickett/redis-pi-camera/releases/tag/v0.0.1) has that code.
 
-I enhanced the code to use the newer Raspberry Pi camera module with autofocus and also added configurable image expiry time in Redis and capture of Lux values from the camera.  Check out [release v0.2](https://github.com/simonprickett/redis-pi-camera/releases/tag/v0.0.2) for that.
+I enhanced the code to use the newer Raspberry Pi camera module with autofocus and also added configurable image expiry time in Redis and capture of Lux values from the camera.  Check out [release v0.0.2](https://github.com/simonprickett/redis-pi-camera/releases/tag/v0.0.2) for that.
 
-In my second live stream for this project, I replaced the `SCAN` command with the [Search capability of Redis Stack](https://redis.io/docs/stack/search/).  [Release 0.3](https://github.com/simonprickett/redis-pi-camera/releases/tag/v0.0.3) contains the code from that stream.
+In my second live stream for this project, I replaced the `SCAN` command with the [Search capability of Redis Stack](https://redis.io/docs/stack/search/).  [Release 0.0.3](https://github.com/simonprickett/redis-pi-camera/releases/tag/v0.0.3) contains the code from that stream.
 
 Here's what the front end looks like when a few images have been captured by the Raspberry Pi...
 
