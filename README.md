@@ -24,7 +24,8 @@ Watch the first video for a full walkthrough of this project.  [Watch on YouTube
 
 In the second episode I started to use Redis Stack's Search capability.  [Watch on YouTube](https://www.youtube.com/watch?v=mcGL6Lk2IXU).
 
-I'm planning a third episode once I can figure out what to do in it :)
+Not sure what I'll do yet, but I've scheduled a third episode for June 1st.  Maybe add a trigger sensor and some more search functionality in the front end?  [Watch on YouTube](https://www.youtube.com/watch?v=qci-pz8e5nk).
+
 
 ## Components of the Demo
 
