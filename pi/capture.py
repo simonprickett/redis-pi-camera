@@ -12,7 +12,6 @@ load_dotenv()
 
 # Get the configurable values for how often to capture images and
 # how long to keep them.
-IMAGE_CAPTURE_FREQUENCY = int(os.getenv("IMAGE_CAPTURE_FREQUENCY"))
 IMAGE_EXPIRY = int(os.getenv("IMAGE_EXPIRY"))
 CAMERA_AUTOFOCUS = os.getenv("CAMERA_AUTOFOCUS") == "1"
 SOUND_SENSOR_PIN = int(os.getenv("SOUND_SENSOR_PIN"))
