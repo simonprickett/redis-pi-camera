@@ -1,3 +1,4 @@
+import base64
 import io
 import os
 import redis
@@ -12,6 +13,7 @@ load_dotenv()
 
 # Get the configurable values for how often to capture images and
 # how long to keep them.
+IMAGE_CAPTURE_FREQUENCY = int(os.getenv("IMAGE_CAPTURE_FREQUENCY"))
 IMAGE_EXPIRY = int(os.getenv("IMAGE_EXPIRY"))
 CAMERA_AUTOFOCUS = os.getenv("CAMERA_AUTOFOCUS") == "1"
 SOUND_SENSOR_PIN = int(os.getenv("SOUND_SENSOR_PIN"))
@@ -52,7 +54,7 @@ def on_sound(channel):
     # Prepare data to save in Redis...
     redis_key = f"image:{current_timestamp}"
     data_to_save = dict()
-    data_to_save["image_data"] = image_data.getvalue()
+    data_to_save["image_data"] = base64.b64encode(image_data.getvalue()).decode()
     data_to_save["timestamp"] = current_timestamp
     data_to_save["mime_type"] = "image/jpeg"
     data_to_save["lux"] = int(image_metadata["Lux"])
@@ -62,7 +64,7 @@ def on_sound(channel):
     # Store data in a Redis Hash (flat map of name/value pairs at a single
     # Redis key), also set an expiry time for the image.
     pipe = redis_client.pipeline(transaction=False)
-    pipe.hset(redis_key, mapping = data_to_save)
+    pipe.json().set(redis_key, "$", data_to_save)
     pipe.expire(redis_key, IMAGE_EXPIRY)
     pipe.execute()
 
