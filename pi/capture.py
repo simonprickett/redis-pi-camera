@@ -2,17 +2,20 @@ import io
 import os
 import redis
 import time
+import RPi.GPIO as GPIO
 from dotenv import load_dotenv
 from picamera2 import Picamera2, Preview
 from libcamera import controls
+from signal import pause
 
 load_dotenv()
 
 # Get the configurable values for how often to capture images and
 # how long to keep them.
-IMAGE_CAPTURE_FREQUENCY = int(os.getenv("IMAGE_CAPTURE_FREQUENCY"))
 IMAGE_EXPIRY = int(os.getenv("IMAGE_EXPIRY"))
 CAMERA_AUTOFOCUS = os.getenv("CAMERA_AUTOFOCUS") == "1"
+SOUND_SENSOR_PIN = int(os.getenv("SOUND_SENSOR_PIN"))
+SOUND_SENSOR_DEBOUNCE_MILLIS = int(os.getenv("SOUND_SENSOR_DEBOUNCE_MILLIS"))
 
 # Picamera2 docs https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 picam2 = Picamera2()
@@ -32,10 +35,10 @@ redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 # Start the camera.
 picam2.start()
 
-# Put this in a loop or whatever you want to do with capturing images. Let's take
-# an image every so many seconds...
+# Callback for when the sound sensor triggers
+def on_sound(channel):
+    # The sound sensor triggered, take a picture!
 
-while True:
     # For the Camera Module 3, trigger an autofocus cycle.
     if CAMERA_AUTOFOCUS == True:
         picam2.autofocus_cycle()
@@ -68,7 +71,13 @@ while True:
     # Optional - do something with the metadata if you want to.
     print(image_metadata)
 
-    time.sleep(IMAGE_CAPTURE_FREQUENCY)
+# Set up the sound sensor.
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SOUND_SENSOR_PIN, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+GPIO.add_event_detect(SOUND_SENSOR_PIN, GPIO.RISING, bouncetime = SOUND_SENSOR_DEBOUNCE_MILLIS, callback = on_sound)
+
+# Do nothing and wait for events to trigger camera callback.
+pause()
 
 # This code is unreachable but shows how to release the Redis client
 # connection nicely should we want to say just take some pictures then
